@@ -13,9 +13,23 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:"Segoe UI",syste
 h1{margin:0;font-size:28px;font-weight:700}
 .sub{color:var(--muted);margin-top:4px}
 .clock{font-size:34px;font-weight:300;font-variant-numeric:tabular-nums;text-align:right}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px;align-items:start}
-.card{background:var(--pane);border:1px solid var(--line);border-radius:14px;padding:16px 18px}
-.card h2{margin:0 0 12px;font-size:17px;display:flex;justify-content:space-between;align-items:center}
+.grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));grid-auto-rows:8px;column-gap:16px;row-gap:0;grid-auto-flow:row dense;align-items:start}
+.card{background:var(--pane);border:1px solid var(--line);border-radius:14px;padding:16px 18px;position:relative;display:flex;flex-direction:column;min-width:0;box-sizing:border-box}
+.card[hidden]{display:none}
+.card.vast{overflow:auto}
+.card.vast textarea{flex:1;min-height:60px}
+.greep{margin-left:auto;align-self:center;margin-right:-6px;padding:2px 6px;border-radius:6px;color:var(--muted);cursor:grab;font-size:16px;line-height:1;opacity:.35;user-select:none}
+.card:hover .greep{opacity:1}
+.greep:hover{background:var(--chip)}
+.hoek{position:absolute;right:2px;bottom:2px;width:18px;height:18px;cursor:nwse-resize;opacity:0;border-radius:4px;
+  background:linear-gradient(135deg,transparent 0 55%,var(--muted) 55% 62%,transparent 62% 72%,var(--muted) 72% 79%,transparent 79%)}
+.card:hover .hoek{opacity:.7}
+.card.sleept{opacity:.4}
+.card.doel{outline:2px dashed var(--accent);outline-offset:3px}
+.card.rekt{outline:2px solid var(--accent);outline-offset:3px}
+.layoutbar{display:flex;gap:12px;align-items:center;justify-content:space-between;color:var(--muted);font-size:12.5px;margin-top:6px}
+@media(max-width:900px){.grid{grid-template-columns:repeat(6,minmax(0,1fr))}}
+.card h2{margin:0 0 12px;font-size:17px;display:flex;gap:8px;align-items:baseline;cursor:default}
 .card h2 small{font-size:12px;color:var(--muted);font-weight:400}
 button{font:inherit;cursor:pointer;border-radius:9px;border:1px solid var(--line);background:#fff;color:var(--ink);min-height:40px;padding:0 14px}
 button:hover{border-color:var(--muted)}
@@ -65,43 +79,18 @@ textarea{min-height:150px;resize:vertical}
     </div>
   </div>
 
-  <div class="grid">
-    <!-- kolom 1 -->
-    <div style="display:flex;flex-direction:column;gap:16px">
-      <div class="card hint" id="meldingHint" hidden>
+  <div class="grid" id="grid">
+    <div class="card hint" data-tegel="hint" id="meldingHint" hidden>
         <h2>Meldingen dempen</h2>
         <p>Windows kan meldingen vanzelf stilzetten zolang een programma schermvullend open staat. Zet dat één keer aan: <b>Niet storen automatisch inschakelen → Bij gebruik van een app in volledig schermmodus</b>.</p>
         <div class="row"><button class="k primary" onclick="post('meldingen')">Open meldingsinstellingen</button><button class="k" onclick="hideHint()">Gedaan</button></div>
       </div>
-
-      <div class="card">
+    <div class="card" data-tegel="inbox">
         <h2>Inbox <small id="inboxTijd">Outlook</small></h2>
         <div id="inbox"><div class="empty">Log één keer in op het tabblad Outlook. Daarna verschijnt je inbox hier vanzelf.</div></div>
         <div id="inboxTip"></div>
       </div>
-
-      <div class="card">
-        <h2>Snel naar</h2>
-        <div class="tiles">
-          <button class="tile mail" onclick="post('open:outlook|https://outlook.office.com/mail/')"><b>Mail</b><span>Outlook</span></button>
-          <button class="tile agenda" onclick="post('open:outlook|https://outlook.office.com/calendar/')"><b>Agenda</b><span>Outlook</span></button>
-          <button class="tile" onclick="post('verslag')"><b>Sessieverslag</b><span>schrijven en kopiëren</span></button>
-          <button class="tile" onclick="post('tab:sjablonen')"><b>Sjablonen</b><span>reMarkable, spiekkaart</span></button>
-          <button class="tile" onclick="post('tab:james')"><b>James</b><span>EPD</span></button>
-          <button class="tile" onclick="post('tab:remarkable')"><b>reMarkable</b><span>notebooks en pdf's</span></button>
-          <button class="tile" onclick="post('tab:caseload')"><b>Caseload</b><span>Excel</span></button>
-          <button class="tile" onclick="post('tab:dsmtool')"><b>DSM-tool</b><span>terugkoppeling</span></button>
-        </div>
-      </div>
-
-      <div class="card">
-        <h2>Kladblok <small>alleen op deze computer</small></h2>
-        <textarea id="klad" placeholder="Snelle notitie tussen sessies door…"></textarea>
-      </div>
-    </div>
-
-    <!-- kolom 2 -->
-    <div class="card">
+    <div class="card" data-tegel="todo">
       <h2>To do's <small>alleen voornaam of initialen</small></h2>
       <div class="row" style="margin-bottom:8px">
         <select id="nType" class="k" style="width:170px" onchange="toggleTel()">
@@ -122,15 +111,29 @@ textarea{min-height:150px;resize:vertical}
       <div id="todos"></div>
       <div style="text-align:right;margin-top:8px"><button class="small" onclick="clearDone()">Afgevinkte opruimen</button></div>
     </div>
-
-    <!-- kolom 3 -->
-    <div style="display:flex;flex-direction:column;gap:16px">
-      <div class="card">
+    <div class="card" data-tegel="bellen">
         <h2>Nog bellen <small>via je iPhone</small></h2>
         <div id="bellen"></div>
         <div class="note">"Bel" geeft het nummer door aan Telefoonkoppeling van Windows, zodat je het nooit hoeft over te typen.</div>
       </div>
-      <div class="card">
+    <div class="card" data-tegel="snel">
+        <h2>Snel naar</h2>
+        <div class="tiles">
+          <button class="tile mail" onclick="post('open:outlook|https://outlook.office.com/mail/')"><b>Mail</b><span>Outlook</span></button>
+          <button class="tile agenda" onclick="post('open:outlook|https://outlook.office.com/calendar/')"><b>Agenda</b><span>Outlook</span></button>
+          <button class="tile" onclick="post('verslag')"><b>Sessieverslag</b><span>schrijven en kopiëren</span></button>
+          <button class="tile" onclick="post('tab:sjablonen')"><b>Sjablonen</b><span>reMarkable, spiekkaart</span></button>
+          <button class="tile" onclick="post('tab:james')"><b>James</b><span>EPD</span></button>
+          <button class="tile" onclick="post('tab:remarkable')"><b>reMarkable</b><span>notebooks en pdf's</span></button>
+          <button class="tile" onclick="post('tab:caseload')"><b>Caseload</b><span>Excel</span></button>
+          <button class="tile" onclick="post('tab:dsmtool')"><b>DSM-tool</b><span>terugkoppeling</span></button>
+        </div>
+      </div>
+    <div class="card" data-tegel="klad">
+        <h2>Kladblok <small>alleen op deze computer</small></h2>
+        <textarea id="klad" placeholder="Snelle notitie tussen sessies door…"></textarea>
+      </div>
+    <div class="card" data-tegel="backup">
         <h2>Back-up</h2>
         <div class="row">
           <button onclick="exportData()">Exporteren</button>
@@ -139,8 +142,8 @@ textarea{min-height:150px;resize:vertical}
         </div>
         <div class="note">To do's en kladblok staan alleen op deze computer. Exporteer af en toe als back-up.</div>
       </div>
-    </div>
   </div>
+  <div class="layoutbar"><span>Sleep een tegel aan <b>⠿</b> om hem te verplaatsen, sleep de hoek rechtsonder om hem groter of kleiner te maken. Dubbelklik op de hoek voor automatische hoogte.</span><button class="small" onclick="herstelIndeling()">Indeling herstellen</button></div>
 </div>
 <div class="toast" id="toast"></div>
 
@@ -226,7 +229,7 @@ const klad=document.getElementById('klad');
 klad.value=S.klad||'';
 klad.addEventListener('input',()=>{S.klad=klad.value;save();});
 
-function hideHint(){ S.hintGedaan=true; save(); document.getElementById('meldingHint').hidden=true; }
+function hideHint(){ S.hintGedaan=true; save(); document.getElementById('meldingHint').hidden=true; pasToe(); }
 document.getElementById('meldingHint').hidden=!!S.hintGedaan;
 
 function exportData(){
@@ -237,7 +240,7 @@ function exportData(){
 function importData(e){
   const f=e.target.files[0]; if(!f) return;
   const r=new FileReader();
-  r.onload=()=>{ try{ S=JSON.parse(r.result); save(); klad.value=S.klad||''; render(); toast('Back-up teruggezet'); }catch(x){ toast('Dit bestand klopt niet'); } };
+  r.onload=()=>{ try{ S=JSON.parse(r.result); save(); klad.value=S.klad||''; render(); pasToe(); toast('Back-up teruggezet'); }catch(x){ toast('Dit bestand klopt niet'); } };
   r.readAsText(f);
 }
 // ---------- inbox vanuit het Outlook-tabblad (alleen in het geheugen, niet opgeslagen) ----------
@@ -275,7 +278,78 @@ if(window.chrome && chrome.webview){
   });
 }
 
-toggleTel(); render();
+// ---------- tegels: slepen, schalen, onthouden ----------
+const ROW=8, GAP=16, MINW=3;
+const STANDAARD={order:['hint','inbox','todo','bellen','snel','klad','backup'],
+  w:{hint:4,inbox:4,todo:4,bellen:4,snel:4,klad:4,backup:4},h:{}};
+const grid=document.getElementById('grid');
+function kolommen(){ return getComputedStyle(grid).gridTemplateColumns.split(' ').length; }
+function indeling(){
+  if(!S.layout||!Array.isArray(S.layout.order)) S.layout=JSON.parse(JSON.stringify(STANDAARD));
+  STANDAARD.order.forEach(id=>{ if(!S.layout.order.includes(id)) S.layout.order.push(id); });
+  S.layout.w=S.layout.w||{}; S.layout.h=S.layout.h||{};
+  return S.layout;
+}
+const tegels={};
+grid.querySelectorAll('[data-tegel]').forEach(c=>{
+  const id=c.dataset.tegel; tegels[id]=c;
+  const h2=c.querySelector('h2');
+  if(h2){ const g=document.createElement('span'); g.className='greep'; g.textContent='⠿'; g.title='Sleep om te verplaatsen'; h2.appendChild(g); g.addEventListener('pointerdown',()=>{ c.draggable=true; }); }
+  const hoek=document.createElement('div'); hoek.className='hoek'; hoek.title='Sleep om groter of kleiner te maken; dubbelklik voor automatische hoogte'; c.appendChild(hoek);
+  hoek.addEventListener('pointerdown',e=>startRekken(e,c,id));
+  hoek.addEventListener('dblclick',()=>{ delete indeling().h[id]; save(); pasToe(); });
+  c.addEventListener('dragstart',e=>{ sleep=id; c.classList.add('sleept'); e.dataTransfer.effectAllowed='move'; e.dataTransfer.setData('text/plain',id); });
+  c.addEventListener('dragend',()=>{ c.draggable=false; c.classList.remove('sleept'); sleep=null; document.querySelectorAll('.doel').forEach(x=>x.classList.remove('doel')); });
+  c.addEventListener('dragover',e=>{ if(!sleep||sleep===id) return; e.preventDefault(); c.classList.add('doel'); });
+  c.addEventListener('dragleave',()=>c.classList.remove('doel'));
+  c.addEventListener('drop',e=>{
+    e.preventDefault(); c.classList.remove('doel');
+    if(!sleep||sleep===id) return;
+    const L=indeling(), o=L.order.filter(x=>x!==sleep);
+    const r=c.getBoundingClientRect();
+    const na=(e.clientX>r.left+r.width/2) || (e.clientY>r.top+r.height*0.75);
+    o.splice(o.indexOf(id)+(na?1:0),0,sleep);
+    L.order=o; save(); pasToe();
+  });
+  new ResizeObserver(()=>rijen(c)).observe(c);
+});
+document.addEventListener('pointerup',()=>{ Object.values(tegels).forEach(c=>{ if(!c.classList.contains('sleept')) c.draggable=false; }); });
+let sleep=null;
+function rijen(c){
+  if(c.hidden) return;
+  const h=c.getBoundingClientRect().height;
+  c.style.gridRowEnd='span '+Math.max(1,Math.ceil((h+GAP)/ROW));
+}
+function pasToe(){
+  const L=indeling(), n=kolommen();
+  L.order.forEach((id,i)=>{
+    const c=tegels[id]; if(!c) return;
+    c.style.order=i;
+    c.style.gridColumnEnd='span '+Math.min(n,Math.max(MINW,L.w[id]||4));
+    if(L.h[id]){ c.style.height=L.h[id]+'px'; c.classList.add('vast'); }
+    else { c.style.height=''; c.classList.remove('vast'); }
+    rijen(c);
+  });
+}
+function startRekken(e,c,id){
+  e.preventDefault(); e.stopPropagation();
+  const L=indeling(), n=kolommen();
+  const kolB=(grid.clientWidth-GAP*(n-1))/n;
+  const r=c.getBoundingClientRect(), x0=e.clientX, y0=e.clientY;
+  c.classList.add('rekt');
+  const zet=ev=>{
+    const w=Math.round((r.width+ev.clientX-x0+GAP)/(kolB+GAP));
+    L.w[id]=Math.min(n,Math.max(MINW,w));
+    L.h[id]=Math.max(110,Math.round(r.height+ev.clientY-y0));
+    pasToe();
+  };
+  const klaar=()=>{ document.removeEventListener('pointermove',zet); document.removeEventListener('pointerup',klaar); c.classList.remove('rekt'); save(); };
+  document.addEventListener('pointermove',zet); document.addEventListener('pointerup',klaar);
+}
+function herstelIndeling(){ S.layout=JSON.parse(JSON.stringify(STANDAARD)); save(); pasToe(); toast('Indeling hersteld'); }
+window.addEventListener('resize',pasToe);
+
+toggleTel(); render(); pasToe();
 </script>
 </body>
 </html>

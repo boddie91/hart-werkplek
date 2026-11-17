@@ -127,6 +127,7 @@ class MainForm : Form
         using (Graphics g = CreateGraphics()) k = g.DpiX / 96f;
 
         Text = "Hart Werkplek";
+        try { Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath); } catch { }
         BackColor = Bg;
         Font = new Font("Segoe UI", 10.5f);
         KeyPreview = true;
@@ -403,6 +404,7 @@ class MainForm : Form
         CoreWebView2Deferral def = e.GetDeferral();
         Form f = new Form();
         f.Text = "Hart Werkplek";
+        f.Icon = Icon;
         f.StartPosition = FormStartPosition.CenterScreen;
         f.Size = new Size(S(1000), S(760));
         if (e.WindowFeatures.HasSize)

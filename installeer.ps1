@@ -17,6 +17,7 @@ New-Item -ItemType Directory -Force -Path (Join-Path $doel 'web') | Out-Null
 Copy-Item (Join-Path $bron 'Werkplek.cs') $doel -Force
 Copy-Item (Join-Path $bron 'web\*') (Join-Path $doel 'web') -Force -Recurse
 Copy-Item (Join-Path $bron 'versie.txt') $doel -Force
+Copy-Item (Join-Path $bron 'hartwerkplek.ico') $doel -Force
 Copy-Item (Join-Path $PSScriptRoot 'bijwerken.ps1') $doel -Force
 $cfg = Join-Path $doel 'instellingen.txt'
 if (Test-Path $cfg) {
@@ -64,7 +65,7 @@ Stap "Programma bouwen"
 $csc = Join-Path $env:WINDIR 'Microsoft.NET\Framework64\v4.0.30319\csc.exe'
 if (-not (Test-Path $csc)) { Fout "de Windows-compiler (csc.exe) is niet gevonden." }
 $exe = Join-Path $doel 'HartWerkplek.exe'
-$out = & $csc /nologo /target:winexe /platform:x64 /codepage:65001 /optimize+ "/out:$exe" `
+$out = & $csc /nologo /target:winexe /platform:x64 /codepage:65001 "/win32icon:$(Join-Path $doel 'hartwerkplek.ico')" /optimize+ "/out:$exe" `
     /r:System.Windows.Forms.dll /r:System.Drawing.dll `
     "/r:$(Join-Path $doel 'Microsoft.Web.WebView2.Core.dll')" `
     "/r:$(Join-Path $doel 'Microsoft.Web.WebView2.WinForms.dll')" `
@@ -85,6 +86,7 @@ $lnk = $sh.CreateShortcut((Join-Path $desk 'Hart Werkplek.lnk'))
 $lnk.TargetPath = $exe
 $lnk.WorkingDirectory = $doel
 $lnk.Description = 'Hart Werkplek'
+$lnk.IconLocation = (Join-Path $doel 'hartwerkplek.ico') + ',0'
 $lnk.Save()
 
 Write-Host ""

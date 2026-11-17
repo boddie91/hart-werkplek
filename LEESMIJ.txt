@@ -49,3 +49,8 @@ Sessieblad bouwer (nieuw)
 - Tabblad "Sessieblad": kies een snelle opzet, vul sessienummer en focus in en zet blokken aan of uit.
 - Klik op "Zet als pdf op het klembord". Ga daarna naar het tabblad reMarkable en sleep de pdf van het klembord op de pagina.
 - Gebruik alleen initialen op het blad.
+
+Startpagina indelen (nieuw)
+- Sleep een tegel aan het puntjesgreepje rechtsboven om hem te verplaatsen.
+- Sleep de hoek rechtsonder om een tegel breder, smaller, hoger of lager te maken. Dubbelklik op die hoek voor automatische hoogte.
+- De indeling wordt onthouden. Met "Indeling herstellen" onderaan ga je terug naar de standaard.
