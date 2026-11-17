@@ -52,7 +52,7 @@ button.k:hover{border-color:var(--muted)}
 <script>
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const KL=['angst','somberheid','piekeren','stress','werk','slaap','zelfbeeld','rouw'];
+const KL=['angst','somberheid','piekeren','stress','werk','slaap','zelfbeeld','zelfvertrouwen','rouw'];
 let klacht='';
 
 $('soort').innerHTML='<option value="">Alle soorten</option>'+[...new Set(D.map(d=>d.s))].map(s=>'<option>'+esc(s)+'</option>').join('');
