@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<title>Interventies – Hart Werkplek</title>
+<style>
+:root{--bg:#eef0f4;--ink:#1d2433;--muted:#5d6678;--line:#dde1ea;--accent:#b23a5b;--accent-soft:#f8e6ec;--chip:#eef1f7;--ok:#2f7a55}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Segoe UI",system-ui,sans-serif;font-size:15px}
+.wrap{padding:24px 28px;max-width:1500px}
+h1{margin:0;font-size:26px}
+.sub{color:var(--muted);margin:4px 0 16px}
+.tools{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+input,select{font:inherit;border:1px solid var(--line);border-radius:9px;padding:9px 12px;background:#fff;color:var(--ink)}
+#zoek{flex:1;min-width:220px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}
+.chip{font:inherit;font-size:13.5px;border:1px solid var(--line);background:#fff;border-radius:20px;padding:5px 12px;cursor:pointer;color:var(--ink)}
+.chip.on{background:var(--ink);border-color:var(--ink);color:#fff}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:14px;align-items:start}
+.card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+.card h2{margin:0 0 4px;font-size:16.5px}
+.soort{display:inline-block;font-size:11px;font-weight:700;padding:1px 8px;border-radius:10px;background:var(--accent-soft);color:var(--accent);margin-bottom:6px}
+.wat{line-height:1.5;margin:0 0 8px}
+details summary{cursor:pointer;color:var(--accent);font-weight:700;font-size:14px}
+ol{margin:8px 0 8px 20px;padding:0;line-height:1.5}
+.uitleg{border-left:3px solid var(--accent);padding:2px 0 2px 11px;margin:10px 0 8px;line-height:1.55}
+.uitleg b{display:block;font-size:12.5px;color:var(--accent);margin-bottom:2px}
+.teken{font-size:13.5px;color:var(--muted);line-height:1.45;margin-bottom:4px}
+.zin{background:var(--chip);border-radius:9px;padding:9px 11px;font-size:13.5px;line-height:1.45;margin-top:8px}
+button.k{font:inherit;font-size:13px;margin-top:8px;min-height:34px;padding:0 12px;border-radius:8px;border:1px solid var(--line);background:#fff;cursor:pointer;color:var(--ink)}
+button.k:hover{border-color:var(--muted)}
+.leeg{color:var(--muted);font-style:italic}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:9px 16px;border-radius:10px;opacity:0;transition:.25s;pointer-events:none}
+.toast.on{opacity:1}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Interventies</h1>
+  <div class="sub">Geheugensteun voor in en rond de sessie, geen protocol. Bij elke interventie staat een zin die je in je sessieverslag kunt plakken.</div>
+  <div class="tools">
+    <input id="zoek" placeholder="Zoek op naam of trefwoord…">
+    <select id="soort" aria-label="Soort"></select>
+  </div>
+  <div class="chips" id="klachten"></div>
+  <div id="aantal" class="sub" style="margin:0 0 10px"></div>
+  <div class="grid" id="lijst"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="data.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const KL=['angst','somberheid','piekeren','stress','werk','slaap','zelfbeeld','rouw'];
+let klacht='';
+
+$('soort').innerHTML='<option value="">Alle soorten</option>'+[...new Set(D.map(d=>d.s))].map(s=>'<option>'+esc(s)+'</option>').join('');
+function chips(){
+  $('klachten').innerHTML=[['','Alles'],...KL.map(k=>[k,k[0].toUpperCase()+k.slice(1)])].map(([k,l])=>
+    '<button class="chip '+(klacht===k?'on':'')+'" onclick="kies(\''+k+'\')">'+l+'</button>').join('');
+}
+function kies(k){ klacht=k; chips(); toon(); }
+function toast(t){const el=$('toast');el.textContent=t;el.classList.add('on');setTimeout(()=>el.classList.remove('on'),1600);}
+function kopieer(i){
+  navigator.clipboard.writeText(D[i].v).then(()=>toast('Verslagzin gekopieerd'),()=>toast('Kopiëren lukte niet'));
+}
+function toon(){
+  const q=$('zoek').value.toLowerCase().trim(), s=$('soort').value;
+  const lijst=D.map((d,i)=>[d,i]).filter(([d])=>
+    (!s||d.s===s) && (!klacht||d.k.includes(klacht)) &&
+    (!q||(d.n+' '+d.w+' '+d.s+' '+d.k.join(' ')+' '+d.h.join(' ')+' '+(d.u||'')).toLowerCase().includes(q)));
+  $('aantal').textContent=lijst.length+' van '+D.length+' interventies';
+  $('lijst').innerHTML=lijst.length?lijst.map(([d,i])=>
+    '<div class="card"><span class="soort">'+esc(d.s)+'</span><h2>'+esc(d.n)+'</h2>'+
+    '<p class="wat">'+esc(d.w)+'</p>'+
+    '<details><summary>'+(d.u?'Uitleg en aanpak':'Zo doe je het')+'</summary>'+(d.u?'<div class="uitleg"><b>Zo leg je het uit</b>'+esc(d.u)+'</div>':'')+(d.t?'<div class="teken"><b>Tekening:</b> '+esc(d.t)+'</div>':'')+'<ol>'+d.h.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ol>'+
+    '<div class="zin">'+esc(d.v)+'</div>'+
+    '<button class="k" onclick="kopieer('+i+')">Kopieer verslagzin</button></details></div>').join('')
+    :'<div class="leeg">Niets gevonden. Probeer een ander woord.</div>';
+}
+$('zoek').addEventListener('input',toon);
+$('soort').addEventListener('change',toon);
+chips(); toon();
+</script>
+</body>
+</html>

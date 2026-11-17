@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<title>Nog niet ingesteld</title>
+<style>
+body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#eef0f4;font-family:"Segoe UI",system-ui,sans-serif;color:#1d2433}
+.box{max-width:480px;background:#fff;border:1px solid #dde1ea;border-radius:14px;padding:28px;text-align:center}
+h1{font-size:21px;margin:0 0 10px}
+p{color:#5d6678;line-height:1.55;margin:0 0 16px}
+code{background:#eef1f7;padding:2px 6px;border-radius:5px}
+button{font:inherit;min-height:44px;padding:0 18px;border-radius:10px;border:none;background:#b23a5b;color:#fff;font-weight:700;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="box">
+  <h1 id="t">Dit tabblad is nog niet ingesteld</h1>
+  <p>Vul in de instellingen achter <code id="k"></code> het webadres of de plek van het bestand in. Daarna opent het hier vanzelf.</p>
+  <button onclick="chrome.webview.postMessage('instellingen')">Instellingen openen</button>
+</div>
+<script>
+const q=new URLSearchParams(location.search);
+document.getElementById('t').textContent=(q.get('tab')||'Dit tabblad')+' is nog niet ingesteld';
+document.getElementById('k').textContent=(q.get('sleutel')||'')+' =';
+</script>
+</body>
+</html>

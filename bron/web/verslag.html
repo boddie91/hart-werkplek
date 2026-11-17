@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<title>Sessieverslag</title>
+<style>
+:root{--ink:#1d2433;--muted:#5d6678;--line:#dde1ea;--accent:#b23a5b;--accent-soft:#f8e6ec;--chip:#eef1f7;--ok:#2f7a55}
+*{box-sizing:border-box}
+body{margin:0;background:#fff;color:var(--ink);font-family:"Segoe UI",system-ui,sans-serif;font-size:14.5px}
+.wrap{padding:16px 16px 28px}
+h1{font-size:19px;margin:0 0 2px}
+.sub{color:var(--muted);font-size:12.5px;margin-bottom:14px;line-height:1.45}
+label{display:block;font-weight:700;margin:14px 0 2px}
+.q{font-size:12.5px;color:var(--muted);margin-bottom:5px;line-height:1.4}
+input,select,textarea{font:inherit;width:100%;border:1px solid var(--line);border-radius:9px;padding:8px 10px;color:var(--ink);background:#fff}
+textarea{min-height:62px;resize:vertical}
+.row{display:flex;gap:8px}.row>*{flex:1}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px}
+.chip{font:inherit;font-size:13px;border:1px solid var(--line);background:#fff;border-radius:20px;padding:5px 11px;cursor:pointer;color:var(--ink)}
+.chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
+button.act{font:inherit;min-height:42px;padding:0 16px;border-radius:10px;border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700}
+pre{white-space:pre-wrap;word-wrap:break-word;background:var(--chip);border-radius:10px;padding:12px;font:inherit;font-size:13.5px;line-height:1.5;margin:8px 0 10px;min-height:60px}
+.bar{position:sticky;bottom:0;background:#fff;padding:10px 0 0;display:flex;gap:8px;border-top:1px solid var(--line);margin-top:14px}
+.ok{color:var(--ok);font-weight:700;font-size:13px;align-self:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Sessieverslag</h1>
+  <div class="sub">Schrijf wat een collega nodig heeft om het over te nemen, geen gespreksverslag. Steekwoorden zijn genoeg. Inspreken kan met Windows-toets + H. Niets wordt opgeslagen.</div>
+
+  <div class="row">
+    <div><label for="nr" style="margin-top:0">Sessie nr.</label><input id="nr" inputmode="numeric" placeholder="bijv. 4"></div>
+    <div><label for="datum" style="margin-top:0">Datum</label><input id="datum" type="date"></div>
+  </div>
+
+  <label for="terug">1. Terugblik</label>
+  <div class="q">Hoe ging het sinds de vorige keer? Wat is er met het huiswerk gebeurd?</div>
+  <textarea id="terug"></textarea>
+
+  <label for="thema">2. Besproken</label>
+  <div class="q">Wat was het hoofdonderwerp, en waarom was dat nu belangrijk?</div>
+  <textarea id="thema"></textarea>
+
+  <label>3. Interventies</label>
+  <div class="q">Wat heb jij gedaan? Tik aan en licht kort toe.</div>
+  <div class="chips" id="chips"></div>
+  <textarea id="intv" placeholder="Toelichting, bijv. welke oefening en bij welk gevoel"></textarea>
+
+  <label for="reactie">4. Reactie cliënt</label>
+  <div class="q">Wat deed het met de cliënt? Wat viel je op?</div>
+  <textarea id="reactie"></textarea>
+
+  <label for="voortgang">5. Voortgang op behandeldoelen</label>
+  <select id="voortgang">
+    <option value="">Kies…</option>
+    <option>Vooruitgang</option>
+    <option>Stabiel</option>
+    <option>Achteruitgang</option>
+    <option>Nog niet te beoordelen</option>
+  </select>
+  <textarea id="voortgangT" placeholder="Waar zie je dat aan?" style="margin-top:6px"></textarea>
+
+  <label for="werk">6. Werk en re-integratie <span style="font-weight:400;color:var(--muted)">(als het speelde)</span></label>
+  <textarea id="werk"></textarea>
+
+  <label for="afspraken">7. Afspraken en huiswerk</label>
+  <textarea id="afspraken"></textarea>
+
+  <label for="plan">8. Volgende sessie</label>
+  <div class="q">Waar ga je mee verder?</div>
+  <textarea id="plan"></textarea>
+
+  <label style="margin-top:20px">Verslag</label>
+  <pre id="uit"></pre>
+
+  <div class="bar">
+    <button class="act primary" onclick="kopieer()">Kopieer voor James</button>
+    <button class="act" id="leeg" onclick="leegmaken()">Leegmaken</button>
+    <span class="ok" id="ok"></span>
+  </div>
+</div>
+
+<script>
+const INTV=[
+  ['Holding','Holding (gevoel toelaten en verdragen in de sessie)'],
+  ['Psycho-educatie','psycho-educatie'],
+  ['Cognitief','cognitieve herstructurering'],
+  ['G-schema','G-schema'],
+  ['Exposure','exposure'],
+  ['Gedragsactivatie','gedragsactivatie'],
+  ['ACT','ACT (waarden, defusie, hier-en-nu)'],
+  ['Ontspanning','ontspannings- of ademhalingsoefening'],
+  ['Probleemoplossing','probleemoplossende vaardigheden'],
+  ['Grenzen/assertiviteit','grenzen en assertiviteit'],
+  ['Terugvalpreventie','terugvalpreventie']
+];
+const gekozen=new Set();
+const $=id=>document.getElementById(id);
+const chips=$('chips');
+INTV.forEach(([kort],i)=>{
+  const b=document.createElement('button');
+  b.type='button'; b.className='chip'; b.textContent=kort;
+  b.onclick=()=>{ gekozen.has(i)?gekozen.delete(i):gekozen.add(i); b.classList.toggle('on'); maak(); };
+  chips.appendChild(b);
+});
+const vandaag=()=>{const d=new Date(); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,10);};
+$('datum').value=vandaag();
+
+const zin=t=>{ t=t.trim().replace(/\s*\n+\s*/g,' '); if(!t) return ''; t=t[0].toUpperCase()+t.slice(1); return /[.!?]$/.test(t)?t:t+'.'; };
+function maak(){
+  const r=[];
+  const d=$('datum').value, nr=$('nr').value.trim();
+  const kop=[nr?'Sessie '+nr:'Sessie', d?new Date(d+'T12:00').toLocaleDateString('nl-NL'):''].filter(Boolean).join(' – ');
+  r.push(kop);
+  const voeg=(titel,tekst)=>{ if(tekst) r.push(titel+': '+tekst); };
+  voeg('Terugblik',zin($('terug').value));
+  voeg('Besproken',zin($('thema').value));
+  const lijst=[...gekozen].sort((a,b)=>a-b).map(i=>INTV[i][1]).join(', ');
+  const iv=[lijst?zin(lijst):'',zin($('intv').value)].filter(Boolean).join(' ');
+  voeg('Interventies',iv);
+  voeg('Reactie cliënt',zin($('reactie').value));
+  const vg=[$('voortgang').value?$('voortgang').value+'.':'',zin($('voortgangT').value)].filter(Boolean).join(' ');
+  voeg('Voortgang behandeldoelen',vg);
+  voeg('Werk en re-integratie',zin($('werk').value));
+  voeg('Afspraken en huiswerk',zin($('afspraken').value));
+  voeg('Volgende sessie',zin($('plan').value));
+  $('uit').textContent=r.join('\n');
+  $('ok').textContent='';
+}
+document.querySelectorAll('input,select,textarea').forEach(el=>el.addEventListener('input',maak));
+
+function kopieer(){
+  const t=$('uit').textContent;
+  navigator.clipboard.writeText(t).then(()=>{ $('ok').textContent='Gekopieerd'; },()=>{
+    const r=document.createRange(); r.selectNodeContents($('uit')); const s=getSelection(); s.removeAllRanges(); s.addRange(r);
+    $('ok').textContent='Druk op Ctrl+C';
+  });
+}
+let leegTimer=null;
+function leegmaken(){
+  const b=$('leeg');
+  if(!leegTimer){ b.textContent='Zeker weten?'; leegTimer=setTimeout(()=>{ b.textContent='Leegmaken'; leegTimer=null; },3000); return; }
+  clearTimeout(leegTimer); leegTimer=null; b.textContent='Leegmaken';
+  document.querySelectorAll('textarea').forEach(el=>el.value='');
+  $('nr').value=''; $('voortgang').value=''; $('datum').value=vandaag();
+  gekozen.clear(); document.querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));
+  maak(); scrollTo(0,0);
+}
+maak();
+</script>
+</body>
+</html>

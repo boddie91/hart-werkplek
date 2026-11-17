@@ -1,0 +1,20 @@
+﻿# Hart Werkplek - instellingen
+# Achter elk = staat wat er in dat tabblad opent: een webadres (https://...)
+# of de plek van een bestand of map op je computer/OneDrive (C:\...).
+# Sla op en sluit Kladblok: het programma leest het dan opnieuw in.
+
+outlook = https://outlook.office.com/mail/
+
+# Het adres waar je normaal inlogt op James (kopieer het uit je browser)
+james =
+
+remarkable = https://my.remarkable.com/
+
+# Link naar Overzicht caseload in OneDrive (in Excel Online: Delen > Link kopiëren)
+caseload =
+
+# Plek van je terugkoppeltool, bijv. C:\Users\jasmijn\OneDrive\Tools\terugkoppeling.html
+dsmtool =
+
+# Map met je sjablonen en spiekkaarten, bijv. C:\Users\jasmijn\OneDrive\Sjablonen
+sjablonen =

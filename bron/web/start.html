@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<title>Start – Hart Werkplek</title>
+<style>
+:root{--bg:#eef0f4;--pane:#fff;--ink:#1d2433;--muted:#5d6678;--line:#dde1ea;--accent:#b23a5b;--accent-soft:#f8e6ec;
+--sun:#9a6a12;--sun-soft:#fbf1dc;--ok:#2f7a55;--ok-soft:#e2f2e9;--chip:#eef1f7;--late:#c2410c}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Segoe UI",system-ui,sans-serif;font-size:15px}
+.wrap{padding:24px 28px;max-width:1500px}
+.head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+h1{margin:0;font-size:28px;font-weight:700}
+.sub{color:var(--muted);margin-top:4px}
+.clock{font-size:34px;font-weight:300;font-variant-numeric:tabular-nums;text-align:right}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px;align-items:start}
+.card{background:var(--pane);border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+.card h2{margin:0 0 12px;font-size:17px;display:flex;justify-content:space-between;align-items:center}
+.card h2 small{font-size:12px;color:var(--muted);font-weight:400}
+button{font:inherit;cursor:pointer;border-radius:9px;border:1px solid var(--line);background:#fff;color:var(--ink);min-height:40px;padding:0 14px}
+button:hover{border-color:var(--muted)}
+.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700}
+.green{background:var(--ok);border-color:var(--ok);color:#fff;font-weight:700}
+.small{min-height:32px;padding:0 10px;font-size:13px}
+input,select,textarea{font:inherit;border:1px solid var(--line);border-radius:9px;padding:8px 10px;background:#fff;color:var(--ink);width:100%}
+textarea{min-height:150px;resize:vertical}
+.tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.tile{min-height:68px;text-align:left;padding:10px 12px;background:var(--chip);border-color:var(--line)}
+.tile b{display:block}.tile span{font-size:12px;color:var(--muted)}
+.tile.mail{background:var(--accent-soft)}.tile.agenda{background:var(--sun-soft)}
+.row{display:flex;gap:8px;align-items:center}.row>*{flex:1}.row>.k{flex:0 0 auto}
+.filters{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
+.chip{border-radius:20px;padding:4px 11px;font-size:13px;border:1px solid var(--line);background:#fff;cursor:pointer;min-height:auto}
+.chip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.todo{display:flex;gap:10px;align-items:flex-start;padding:10px 2px;border-bottom:1px solid #eef0f4}
+.todo:last-child{border-bottom:none}
+.todo input[type=checkbox]{width:18px;height:18px;margin-top:2px;flex:0 0 auto;accent-color:var(--ok)}
+.todo .txt{flex:1}
+.todo.done .txt{text-decoration:line-through;color:var(--muted)}
+.meta{font-size:12px;color:var(--muted);margin-top:2px}
+.late{color:var(--late);font-weight:700}
+.tag{display:inline-block;font-size:11px;padding:1px 8px;border-radius:10px;margin-right:6px;font-weight:700}
+.t-bellen{background:var(--accent-soft);color:var(--accent)}.t-verslag{background:var(--chip);color:#3d4a63}
+.t-terugkoppeling{background:var(--ok-soft);color:var(--ok)}.t-intake{background:var(--sun-soft);color:var(--sun)}.t-overig{background:#eee;color:#555}
+.tel{font-size:18px;font-weight:700;letter-spacing:.04em;font-variant-numeric:tabular-nums}
+.call{padding:12px;border:1px solid var(--line);border-radius:10px;margin-bottom:10px}
+.empty{color:var(--muted);font-style:italic;padding:6px 0}
+.hint{background:var(--sun-soft);border:none;color:#5a3f0b;line-height:1.5}
+.hint p{margin:0 0 10px}
+.note{font-size:12px;color:var(--muted);margin-top:8px;line-height:1.45}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:9px 16px;border-radius:10px;opacity:0;transition:.25s;pointer-events:none}
+.toast.on{opacity:1}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="head">
+    <div>
+      <h1 id="groet">Goedemorgen, Jasmijn</h1>
+      <div class="sub" id="samenvatting"></div>
+    </div>
+    <div>
+      <div class="clock" id="klok"></div>
+      <div class="sub" id="datum" style="text-align:right"></div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <!-- kolom 1 -->
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="card hint" id="meldingHint" hidden>
+        <h2>Meldingen dempen</h2>
+        <p>Windows kan meldingen vanzelf stilzetten zolang een programma schermvullend open staat. Zet dat één keer aan: <b>Niet storen automatisch inschakelen → Bij gebruik van een app in volledig schermmodus</b>.</p>
+        <div class="row"><button class="k primary" onclick="post('meldingen')">Open meldingsinstellingen</button><button class="k" onclick="hideHint()">Gedaan</button></div>
+      </div>
+
+      <div class="card">
+        <h2>Inbox <small id="inboxTijd">Outlook</small></h2>
+        <div id="inbox"><div class="empty">Log één keer in op het tabblad Outlook. Daarna verschijnt je inbox hier vanzelf.</div></div>
+        <div id="inboxTip"></div>
+      </div>
+
+      <div class="card">
+        <h2>Snel naar</h2>
+        <div class="tiles">
+          <button class="tile mail" onclick="post('open:outlook|https://outlook.office.com/mail/')"><b>Mail</b><span>Outlook</span></button>
+          <button class="tile agenda" onclick="post('open:outlook|https://outlook.office.com/calendar/')"><b>Agenda</b><span>Outlook</span></button>
+          <button class="tile" onclick="post('verslag')"><b>Sessieverslag</b><span>schrijven en kopiëren</span></button>
+          <button class="tile" onclick="post('tab:sjablonen')"><b>Sjablonen</b><span>reMarkable, spiekkaart</span></button>
+          <button class="tile" onclick="post('tab:james')"><b>James</b><span>EPD</span></button>
+          <button class="tile" onclick="post('tab:remarkable')"><b>reMarkable</b><span>notebooks en pdf's</span></button>
+          <button class="tile" onclick="post('tab:caseload')"><b>Caseload</b><span>Excel</span></button>
+          <button class="tile" onclick="post('tab:dsmtool')"><b>DSM-tool</b><span>terugkoppeling</span></button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Kladblok <small>alleen op deze computer</small></h2>
+        <textarea id="klad" placeholder="Snelle notitie tussen sessies door…"></textarea>
+      </div>
+    </div>
+
+    <!-- kolom 2 -->
+    <div class="card">
+      <h2>To do's <small>alleen voornaam of initialen</small></h2>
+      <div class="row" style="margin-bottom:8px">
+        <select id="nType" class="k" style="width:170px" onchange="toggleTel()">
+          <option value="bellen">Bellen</option>
+          <option value="intake">Intake uploaden/uitwerken</option>
+          <option value="verslag">Verslag</option>
+          <option value="terugkoppeling">Terugkoppeling</option>
+          <option value="overig">Overig</option>
+        </select>
+        <input id="nTxt" placeholder="Wat?" onkeydown="if(event.key==='Enter')addTodo()">
+      </div>
+      <div class="row">
+        <input id="nTel" placeholder="Telefoonnummer (plak uit James)" inputmode="tel">
+        <input id="nDue" type="date" class="k" style="width:160px" title="Uiterlijk">
+        <button class="k primary" onclick="addTodo()">Toevoegen</button>
+      </div>
+      <div class="filters" id="filters"></div>
+      <div id="todos"></div>
+      <div style="text-align:right;margin-top:8px"><button class="small" onclick="clearDone()">Afgevinkte opruimen</button></div>
+    </div>
+
+    <!-- kolom 3 -->
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="card">
+        <h2>Nog bellen <small>via je iPhone</small></h2>
+        <div id="bellen"></div>
+        <div class="note">"Bel" geeft het nummer door aan Telefoonkoppeling van Windows, zodat je het nooit hoeft over te typen.</div>
+      </div>
+      <div class="card">
+        <h2>Back-up</h2>
+        <div class="row">
+          <button onclick="exportData()">Exporteren</button>
+          <button onclick="document.getElementById('imp').click()">Importeren</button>
+          <input type="file" id="imp" accept=".json" style="display:none" onchange="importData(event)">
+        </div>
+        <div class="note">To do's en kladblok staan alleen op deze computer. Exporteer af en toe als back-up.</div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+function post(m){ if(window.chrome && chrome.webview) chrome.webview.postMessage(m); else toast('Werkt alleen in Hart Werkplek'); }
+const KEY='hartwerkplek_v1';
+let S=load();
+function load(){ try{const d=JSON.parse(localStorage.getItem(KEY)); if(d) return d;}catch(e){} return {todos:[],klad:'',filter:'alle',hintGedaan:false}; }
+function save(){ try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){toast('Opslaan lukt niet');} }
+function toast(t){const el=document.getElementById('toast');el.textContent=t;el.classList.add('on');setTimeout(()=>el.classList.remove('on'),1800);}
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+function tick(){
+  const n=new Date(),h=n.getHours();
+  document.getElementById('klok').textContent=n.toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'});
+  document.getElementById('datum').textContent=n.toLocaleDateString('nl-NL',{weekday:'long',day:'numeric',month:'long'});
+  document.getElementById('groet').textContent=(h<12?'Goedemorgen':h<18?'Goedemiddag':'Goedenavond')+', Jasmijn';
+}
+tick(); setInterval(tick,15000);
+
+const TYPES={bellen:'Bellen',intake:'Intake',verslag:'Verslag',terugkoppeling:'Terugkoppeling',overig:'Overig'};
+const today=()=>new Date().toISOString().slice(0,10);
+const clean=t=>t.replace(/[^\d+]/g,'');
+function fmtTel(t){const c=clean(t); if(/^06\d{8}$/.test(c)) return c.replace(/^(06)(\d{2})(\d{2})(\d{2})(\d{2})$/,'$1 $2 $3 $4 $5'); return c.replace(/(\d{3})(?=\d)/g,'$1 ');}
+function toggleTel(){ document.getElementById('nTel').style.display = nType.value==='bellen' ? '' : 'none'; }
+
+function addTodo(){
+  const type=nType.value, txt=nTxt.value.trim(), tel=clean(nTel.value), due=nDue.value;
+  if(!txt){ nTxt.focus(); return; }
+  if(type==='bellen' && tel && tel.length<10){ toast('Nummer lijkt te kort, controleer het'); return; }
+  S.todos.unshift({id:Date.now(),type,txt,tel:type==='bellen'?tel:'',due,done:false,pogingen:0});
+  nTxt.value=''; nTel.value=''; nDue.value=''; save(); render();
+}
+function byId(id){ return S.todos.find(x=>x.id===id); }
+function toggle(id){ const t=byId(id); t.done=!t.done; save(); render(); }
+function del(id){ S.todos=S.todos.filter(x=>x.id!==id); save(); render(); }
+function nextWorkday(){ const d=new Date(); do{ d.setDate(d.getDate()+1); }while(d.getDay()===0||d.getDay()===6); return d.toISOString().slice(0,10); }
+function poging(id){
+  const t=byId(id); t.pogingen=(t.pogingen||0)+1; t.laatste=new Date().toISOString();
+  // slim: niet opgenomen = automatisch morgen (volgende werkdag) opnieuw
+  if(!t.due || t.due<=today()) t.due=nextWorkday();
+  save(); render(); toast('Genoteerd. Staat weer op de lijst voor '+new Date(t.due+'T12:00').toLocaleDateString('nl-NL',{weekday:'long'}));
+}
+function bel(id){ const t=byId(id); location.href='tel:'+t.tel; }
+function kopieer(n){ navigator.clipboard.writeText(n).then(()=>toast('Nummer gekopieerd')); }
+function clearDone(){ S.todos=S.todos.filter(x=>!x.done); save(); render(); }
+function setFilter(f){ S.filter=f; save(); render(); }
+
+function dueHtml(t){
+  if(!t.due) return '';
+  const d=new Date(t.due+'T12:00').toLocaleDateString('nl-NL',{day:'numeric',month:'short'});
+  return (t.due<today() && !t.done) ? '<span class="late">Verlopen: '+d+'</span>' : 'Uiterlijk '+d;
+}
+function render(){
+  const open=S.todos.filter(t=>!t.done);
+  const nb=open.filter(t=>t.type==='bellen').length, nl=open.filter(t=>t.due&&t.due<today()).length;
+  document.getElementById('samenvatting').textContent=[nb?nb+(nb===1?' cliënt':' cliënten')+' nog bellen':'', nl?nl+' to do'+(nl===1?'':"'s")+' verlopen':'', !open.length?'Niets openstaand':''].filter(Boolean).join(' · ');
+
+  document.getElementById('filters').innerHTML=[['alle','Alles'],...Object.entries(TYPES)].map(([k,v])=>
+    '<span class="chip '+(S.filter===k?'on':'')+'" onclick="setFilter(\''+k+'\')">'+v+'</span>').join('');
+
+  let list=S.todos.filter(t=>S.filter==='alle'||t.type===S.filter);
+  list.sort((a,b)=>(a.done-b.done)||((a.due||'9999')<(b.due||'9999')?-1:1));
+  document.getElementById('todos').innerHTML=list.length?list.map(t=>
+    '<div class="todo '+(t.done?'done':'')+'"><input type="checkbox" '+(t.done?'checked':'')+' onchange="toggle('+t.id+')">'+
+    '<div class="txt"><span class="tag t-'+t.type+'">'+TYPES[t.type]+'</span>'+esc(t.txt)+
+    '<div class="meta">'+dueHtml(t)+(t.tel?' · '+esc(fmtTel(t.tel)):'')+'</div></div>'+
+    '<button class="small" title="Verwijderen" onclick="del('+t.id+')">✕</button></div>').join('')
+    :'<div class="empty">Niets openstaand.</div>';
+
+  const calls=open.filter(t=>t.type==='bellen'&&t.tel);
+  document.getElementById('bellen').innerHTML=calls.length?calls.map(t=>{
+    const pog=t.pogingen?'<span class="late">'+t.pogingen+'× geprobeerd</span>':'<span style="color:var(--muted)">nog niet gebeld</span>';
+    return '<div class="call"><div class="row" style="justify-content:space-between"><b>'+esc(t.txt)+'</b><span class="k" style="font-size:12px">'+pog+'</span></div>'+
+      '<div class="row" style="margin-top:8px;flex-wrap:wrap"><span class="tel">'+esc(fmtTel(t.tel))+'</span>'+
+      '<button class="k green" onclick="bel('+t.id+')">Bel</button>'+
+      '<button class="k small" onclick="kopieer(\''+t.tel+'\')">Kopieer</button>'+
+      '<button class="k small" onclick="poging('+t.id+')">Niet opgenomen</button></div></div>';
+  }).join(''):'<div class="empty">Geen belafspraken. Voeg een to do "Bellen" toe met nummer.</div>';
+}
+
+const klad=document.getElementById('klad');
+klad.value=S.klad||'';
+klad.addEventListener('input',()=>{S.klad=klad.value;save();});
+
+function hideHint(){ S.hintGedaan=true; save(); document.getElementById('meldingHint').hidden=true; }
+document.getElementById('meldingHint').hidden=!!S.hintGedaan;
+
+function exportData(){
+  const b=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(b);
+  a.download='hart-werkplek-backup-'+today()+'.json'; a.click();
+}
+function importData(e){
+  const f=e.target.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=()=>{ try{ S=JSON.parse(r.result); save(); klad.value=S.klad||''; render(); toast('Back-up teruggezet'); }catch(x){ toast('Dit bestand klopt niet'); } };
+  r.readAsText(f);
+}
+// ---------- inbox vanuit het Outlook-tabblad (alleen in het geheugen, niet opgeslagen) ----------
+let inboxItems=[];
+function renderInbox(){
+  const el=document.getElementById('inbox');
+  if(!inboxItems.length) return;
+  const unread=inboxItems.filter(x=>x.u).length;
+  document.getElementById('inboxTijd').textContent=(unread?unread+' ongelezen · ':'')+'bijgewerkt '+new Date().toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'});
+  el.innerHTML=inboxItems.slice(0,6).map((m,i)=>{
+    const van=m.l[0]||'', onderwerp=m.l[1]||'', rest=m.l.slice(2).join(' · ');
+    return '<div class="todo" style="cursor:pointer" onclick="post(\'open:outlook|https://outlook.office.com/mail/\')">'+
+      '<span style="width:8px;height:8px;border-radius:50%;margin-top:7px;flex:0 0 auto;background:'+(m.u?'var(--accent)':'var(--line)')+'"></span>'+
+      '<div class="txt" style="min-width:0"><div style="'+(m.u?'font-weight:700':'')+'">'+esc(van)+'</div>'+
+      '<div class="meta" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(onderwerp)+(rest?' · '+esc(rest):'')+'</div></div></div>';
+  }).join('');
+  // slim: nieuwe aanmelding in de inbox? Bied een to do aan
+  const aan=inboxItems.find(m=>m.u && /aanmeld/i.test(m.l.join(' ')));
+  const tip=document.getElementById('inboxTip');
+  const al=aan && S.todos.some(t=>!t.done && /aanmelding/i.test(t.txt) && t.bron===aan.l.join('|'));
+  tip.innerHTML=(aan && !al)?'<div class="note" style="display:flex;gap:8px;align-items:center;background:var(--sun-soft);color:#5a3f0b;padding:8px 10px;border-radius:9px">'+
+    '<span style="flex:1">Nieuwe aanmelding binnengekomen.</span><button class="small" onclick="aanmeldTodo()">Maak to do</button></div>':'';
+}
+function aanmeldTodo(){
+  const aan=inboxItems.find(m=>m.u && /aanmeld/i.test(m.l.join(' ')));
+  if(!aan) return;
+  S.todos.unshift({id:Date.now(),type:'intake',txt:'Nieuwe aanmelding in James zetten',tel:'',due:today(),done:false,pogingen:0,bron:aan.l.join('|')});
+  save(); render(); renderInbox(); toast('To do gemaakt');
+}
+if(window.chrome && chrome.webview){
+  chrome.webview.addEventListener('message',ev=>{
+    const d=String(ev.data||'');
+    if(!d.startsWith('inbox:')) return;
+    try{ inboxItems=JSON.parse(d.slice(6)); renderInbox(); }catch(e){}
+  });
+}
+
+toggleTel(); render();
+</script>
+</body>
+</html>

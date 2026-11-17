@@ -1,0 +1,51 @@
+﻿HART WERKPLEK - eerste testversie
+
+Installeren (eenmalig, geen beheerdersrechten nodig)
+1. Pak deze zip uit, bijvoorbeeld in je map Downloads.
+2. Dubbelklik op "Installeer Hart Werkplek.bat".
+   Geeft Windows een blauwe waarschuwing? Klik op "Meer informatie" en dan "Toch uitvoeren".
+3. Wacht tot er "Klaar!" staat. Op je bureaublad staat nu "Hart Werkplek".
+
+Eerste keer starten
+- Het programma opent schermvullend. Met F11 of de knop links onderin wissel je naar een gewoon venster.
+- Klik links op "Instellingen" en vul het adres van James in (en eventueel de caseload, de DSM-tool en je sjablonenmap).
+- Log in elk tabblad een keer in. Het programma onthoudt dat, net als een browser.
+
+Meldingen dempen
+Windows 11 zet meldingen vanzelf stil zolang een programma schermvullend open staat, als dit aan staat:
+Instellingen > Systeem > Meldingen > Niet storen automatisch inschakelen > "Bij gebruik van een app in volledig schermmodus".
+Op de startpagina staat een knop die die instellingen voor je opent.
+
+Bellen
+Koppel je iPhone een keer aan de app Telefoonkoppeling (Phone Link) van Windows.
+Daarna geeft de knop "Bel" het nummer daaraan door.
+
+Gaat het bouwen mis?
+Dan staat de foutmelding in %LOCALAPPDATA%\HartWerkplek\bouwfout.txt. Stuur die naar Claude.
+
+Opnieuw installeren of bijwerken kan gewoon met hetzelfde bestand; je instellingen en to do's blijven bewaard.
+
+Klembord (nieuw)
+- Alles wat je downloadt (bijv. een notebook als pdf in het tabblad reMarkable, of een bijlage in Outlook) komt in het Klembord rechts.
+- Sleep het bestand van het klembord naar de uploadplek in James. Lukt slepen niet? Klik op "Pad", kies in James "bestand kiezen" en plak het pad.
+- Klik op "Klaar" als het in James staat. Bestanden ouder dan 1 dag worden bij het starten vanzelf gewist.
+
+Bijwerken
+Klik in Hart Werkplek links onderin op "Bijwerken". Het programma haalt de nieuwste versie van GitHub (boddie91/hart-werkplek), installeert die en start opnieuw op. Staat er "(nieuw)" achter de knop, dan is er een nieuwere versie. Je instellingen, inlogs en to do's blijven bewaard.
+
+Sessieverslag (nieuw)
+- Klik links op "Sessieverslag". Het paneel opent rechts naast het tabblad waar je bent, bijvoorbeeld naast James.
+- Vul steekwoorden in, klik op "Kopieer voor James" en plak het in het dossier. Er wordt niets opgeslagen.
+
+Gesplitst scherm in James (nieuw)
+- Vensters die James normaal los opent (zoals de clientkaart) openen nu rechts in het James-tabblad, met eigen tabbladen.
+- Sleep de grijze streep om de verdeling aan te passen. Met het kruisje sluit je een tabblad.
+
+Interventies (nieuw)
+- Nieuw tabblad met een catalogus van interventies. Zoek op naam of filter op klacht en soort.
+- Bij elke interventie staan de stappen en een zin voor je sessieverslag, die je kunt kopieren en aanvullen.
+
+Sessieblad bouwer (nieuw)
+- Tabblad "Sessieblad": kies een snelle opzet, vul sessienummer en focus in en zet blokken aan of uit.
+- Klik op "Zet als pdf op het klembord". Ga daarna naar het tabblad reMarkable en sleep de pdf van het klembord op de pagina.
+- Gebruik alleen initialen op het blad.
