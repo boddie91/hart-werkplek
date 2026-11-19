@@ -13,8 +13,15 @@ remarkable = https://my.remarkable.com/
 # Link naar Overzicht caseload in OneDrive (in Excel Online: Delen > Link kopiëren)
 caseload =
 
-# Plek van je terugkoppeltool, bijv. C:\Users\jasmijn\OneDrive\Tools\terugkoppeling.html
-dsmtool =
+# Plek van je checklist (Differentiaaldiagnostiek), bijv. C:\Users\jasmijn\OneDrive\Tools\checklist.html
+# Hart Werkplek zet hem in het tabblad Rapportages en neemt een nieuwere versie vanzelf over.
+checklist =
+
+# Leeg = je DSM-5 dashboard op claude.ai
+dsm =
+
+# Leeg = je aanmeldpaneel van GitHub; "uit" = geen aanmeldpaneel op de startpagina
+aanmeldpaneel =
 
 # Map met je sjablonen en spiekkaarten, bijv. C:\Users\jasmijn\OneDrive\Sjablonen
 sjablonen =

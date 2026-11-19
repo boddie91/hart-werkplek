@@ -138,6 +138,7 @@ class MainForm : Form
         Directory.CreateDirectory(clipDir);
         CleanOldClips();
         LoadConfig();
+        SyncChecklist();
         BuildTabs();
         BuildUi();
         RefreshClips();
@@ -166,9 +167,16 @@ class MainForm : Form
         return cfg.TryGetValue(key, out v) ? v : "";
     }
 
+    static readonly Dictionary<string, string> Standaard = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+    {
+        { "dsm", "https://claude.ai/artifact/TKB7Ua1vEg58pqWUvwcj8G" },
+        { "aanmeldpaneel", "https://boddie91.github.io/hart-aanmeldpaneel/taskpane.html" }
+    };
+
     string ResolveUrl(string key, string label)
     {
         string v = Cfg(key);
+        if (v.Length == 0 && Standaard.ContainsKey(key)) v = Standaard[key];
         if (v.Length == 0)
             return "https://werkplek.local/leeg.html?tab=" + Uri.EscapeDataString(label) + "&sleutel=" + key;
         if ((v.Length > 2 && v[1] == ':') || v.StartsWith("\\\\"))
@@ -183,7 +191,8 @@ class MainForm : Form
         AddTab("james", "James", null);
         AddTab("remarkable", "reMarkable", null);
         AddTab("caseload", "Caseload", null);
-        AddTab("dsmtool", "DSM-tool", null);
+        AddTab("dsm", "DSM", null);
+        AddTab("rapportages", "Rapportages", "https://werkplek.local/rapportages.html");
         AddTab("interventies", "Interventies", "https://werkplek.local/interventies.html");
         AddTab("sessieblad", "Sessieblad", "https://werkplek.local/sessieblad.html");
         AddTab("sjablonen", "Sjablonen", null);
@@ -358,6 +367,7 @@ class MainForm : Form
         v.DefaultBackgroundColor = Color.White;
         t.View = v;
         if (t.Key == "james") BuildSplit(t, v);
+        else if (t.Key == "start") BuildStartSplit(t, v);
         else t.Host = v;
         t.Host.Visible = false;
         content.Controls.Add(t.Host);
@@ -477,6 +487,15 @@ class MainForm : Form
         else if (m == "instellingen")
         {
             BeginInvoke(new Action(OpenSettings));
+        }
+        else if (m == "paneel")
+        {
+            BeginInvoke(new Action(TogglePaneel));
+        }
+        else if (m == "kies-checklist")
+        {
+            CoreWebView2 core = sender as CoreWebView2;
+            BeginInvoke(new Action(delegate { KiesChecklist(core); }));
         }
         else if (m == "verslag")
         {
@@ -638,6 +657,155 @@ class MainForm : Form
         pt.Chip.Dispose();
         if (t.Pane.Count == 0) t.Split.Panel2Collapsed = true;
         else SelectPaneTab(t, t.Pane[t.Pane.Count - 1]);
+    }
+
+    // ---------- startpagina met het aanmeldpaneel als vaste kolom ----------
+    SplitContainer startSplit;
+    WebView2 paneel;
+    string PaneelBreedtePad { get { return Path.Combine(dataDir, "paneelbreedte.txt"); } }
+
+    const string PaneelScript = @"
+(function(){
+  if (location.hostname !== 'boddie91.github.io' || location.pathname.indexOf('hart-aanmeldpaneel') < 0) return;
+  var st = document.createElement('style');
+  st.textContent = '#tab-nieuw{display:none!important}';
+  (document.head || document.documentElement).appendChild(st);
+  setInterval(function(){
+    var n = document.getElementById('tab-nieuw');
+    if (n && n.getAttribute('aria-selected') === 'true') {
+      var t = document.getElementById('tab-todo');
+      if (t) t.click();
+    }
+  }, 400);
+})();";
+
+    void BuildStartSplit(Tab t, WebView2 main)
+    {
+        SplitContainer sc = new SplitContainer();
+        sc.Dock = DockStyle.Fill;
+        sc.SplitterWidth = S(6);
+        sc.BackColor = Line;
+        sc.FixedPanel = FixedPanel.Panel2;
+        sc.Panel1.Controls.Add(main);
+        t.Host = sc;
+        startSplit = sc;
+
+        string url = ResolveUrl("aanmeldpaneel", "Aanmeldpaneel");
+        if (Cfg("aanmeldpaneel").Equals("uit", StringComparison.OrdinalIgnoreCase)) { sc.Panel2Collapsed = true; return; }
+
+        paneel = new WebView2();
+        paneel.Dock = DockStyle.Fill;
+        paneel.DefaultBackgroundColor = Color.White;
+        sc.Panel2.Controls.Add(paneel);
+
+        int breedte = S(420);
+        try { int b; if (int.TryParse(File.ReadAllText(PaneelBreedtePad).Trim(), out b) && b > 200) breedte = b; } catch { }
+        bool gezet = false;
+        sc.SizeChanged += delegate
+        {
+            if (gezet || sc.Width < breedte + S(400)) return;
+            gezet = true;
+            ZetPaneelBreedte(breedte);
+        };
+        sc.SplitterMoved += delegate
+        {
+            try { File.WriteAllText(PaneelBreedtePad, (sc.Width - sc.SplitterDistance - sc.SplitterWidth).ToString()); } catch { }
+        };
+        StartPaneel(url);
+    }
+
+    void ZetPaneelBreedte(int breedte)
+    {
+        if (startSplit == null) return;
+        try
+        {
+            int d = startSplit.Width - breedte - startSplit.SplitterWidth;
+            if (d > S(300)) startSplit.SplitterDistance = d;
+        }
+        catch { }
+    }
+
+    async void StartPaneel(string url)
+    {
+        try
+        {
+            await paneel.EnsureCoreWebView2Async(env);
+            paneel.CoreWebView2.NewWindowRequested += OnNewWindow;
+            paneel.CoreWebView2.DownloadStarting += OnDownload;
+            await paneel.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(PaneelScript);
+            paneel.CoreWebView2.Navigate(url);
+        }
+        catch { }
+    }
+
+    void TogglePaneel()
+    {
+        if (startSplit == null || paneel == null) return;
+        startSplit.Panel2Collapsed = !startSplit.Panel2Collapsed;
+        if (!startSplit.Panel2Collapsed)
+        {
+            int breedte = S(420);
+            try { int b; if (int.TryParse(File.ReadAllText(PaneelBreedtePad).Trim(), out b) && b > 200) breedte = b; } catch { }
+            ZetPaneelBreedte(breedte);
+        }
+    }
+
+    // ---------- checklist (eigen bestand, niet op GitHub) ----------
+    string ChecklistDoel { get { return Path.Combine(webDir, "eigen", "checklist.html"); } }
+
+    string ChecklistBron()
+    {
+        foreach (string key in new string[] { "checklist", "dsmtool" })
+        {
+            string v = Cfg(key);
+            if (v.Length > 2 && v[1] == ':' && File.Exists(v) &&
+                (v.EndsWith(".html", StringComparison.OrdinalIgnoreCase) || v.EndsWith(".htm", StringComparison.OrdinalIgnoreCase)))
+                return v;
+        }
+        return null;
+    }
+
+    void SyncChecklist()
+    {
+        try
+        {
+            string bron = ChecklistBron();
+            if (bron == null) return;
+            if (File.Exists(ChecklistDoel) && File.GetLastWriteTimeUtc(ChecklistDoel) >= File.GetLastWriteTimeUtc(bron)) return;
+            Directory.CreateDirectory(Path.GetDirectoryName(ChecklistDoel));
+            File.Copy(bron, ChecklistDoel, true);
+        }
+        catch { }
+    }
+
+    void KiesChecklist(CoreWebView2 core)
+    {
+        bool full = isFull;
+        SetFull(false);
+        using (OpenFileDialog d = new OpenFileDialog())
+        {
+            d.Title = "Kies het bestand van de checklist (Differentiaaldiagnostiek)";
+            d.Filter = "Webpagina (*.html;*.htm)|*.html;*.htm";
+            if (d.ShowDialog(this) == DialogResult.OK)
+            {
+                try
+                {
+                    Directory.CreateDirectory(Path.GetDirectoryName(ChecklistDoel));
+                    File.Copy(d.FileName, ChecklistDoel, true);
+                    if (Cfg("checklist").Length == 0)
+                    {
+                        File.AppendAllText(cfgPath, "\r\n# Bestand van de checklist (wordt bij het starten bijgewerkt als het nieuwer is)\r\nchecklist = " + d.FileName + "\r\n", Encoding.UTF8);
+                        LoadConfig();
+                    }
+                    if (core != null) core.PostWebMessageAsString("checklist-ok");
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(this, "Kopiëren lukte niet.\n\n" + ex.Message, "Hart Werkplek");
+                }
+            }
+        }
+        if (full) SetFull(true);
     }
 
     // ---------- sessieverslag: paneel dat naast elk tabblad open kan ----------
@@ -851,7 +1019,7 @@ class MainForm : Form
     {
         Panel p = new Panel();
         p.Width = S(250);
-        p.Height = S(72);
+        p.Height = S(80);
         p.Margin = new Padding(0, 0, 0, S(8));
         p.BackColor = Chip;
         p.Cursor = Cursors.SizeAll;
@@ -866,22 +1034,28 @@ class MainForm : Form
         p.Controls.Add(name);
 
         Label meta = new Label();
-        meta.Text = "sleep naar James  ·  " + File.GetLastWriteTime(path).ToString("HH:mm");
+        meta.Text = "sleep naar James of klik op Open  ·  " + File.GetLastWriteTime(path).ToString("HH:mm");
         meta.Font = new Font("Segoe UI", 8.5f);
         meta.ForeColor = Muted;
-        meta.Location = new Point(S(10), S(30));
-        meta.Size = new Size(S(160), S(18));
+        meta.Location = new Point(S(10), S(28));
+        meta.Size = new Size(S(230), S(18));
         p.Controls.Add(meta);
 
+        Button open = SmallButton("Open");
+        open.Size = new Size(S(56), S(26));
+        open.Location = new Point(S(10), S(48));
+        open.Click += delegate { try { Process.Start(path); } catch (Exception ex) { MessageBox.Show(this, "Openen lukte niet.\n\n" + ex.Message, "Hart Werkplek"); } };
+        p.Controls.Add(open);
+
         Button copy = SmallButton("Pad");
-        copy.Size = new Size(S(44), S(26));
-        copy.Location = new Point(S(150), S(40));
+        copy.Size = new Size(S(50), S(26));
+        copy.Location = new Point(S(70), S(48));
         copy.Click += delegate { Clipboard.SetText(path); };
         p.Controls.Add(copy);
 
         Button done = SmallButton("Klaar");
-        done.Size = new Size(S(52), S(26));
-        done.Location = new Point(S(196), S(40));
+        done.Size = new Size(S(56), S(26));
+        done.Location = new Point(S(124), S(48));
         done.Click += delegate { try { File.Delete(path); } catch { } RefreshClips(); };
         p.Controls.Add(done);
 
@@ -1020,6 +1194,7 @@ class MainForm : Form
     void ReloadSettings()
     {
         LoadConfig();
+        SyncChecklist();
         foreach (Tab t in order)
         {
             if (t.Fixed) continue;

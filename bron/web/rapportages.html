@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<title>Rapportages – Hart Werkplek</title>
+<style>
+:root{--bg:#eef0f4;--ink:#1d2433;--muted:#5d6678;--line:#dde1ea;--accent:#b23a5b;--accent-soft:#f8e6ec}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Segoe UI",system-ui,sans-serif;font-size:15px;display:flex;flex-direction:column}
+.balk{display:flex;align-items:flex-end;gap:4px;padding:14px 22px 0;background:#fff;border-bottom:1px solid var(--line)}
+.balk h1{font-size:19px;margin:0 22px 10px 0}
+.sub{font:inherit;border:none;background:none;padding:10px 14px;color:var(--muted);border-bottom:2px solid transparent;cursor:pointer;margin-bottom:-1px}
+.sub:hover{color:var(--ink)}
+.sub.on{color:var(--accent);border-bottom-color:var(--accent);font-weight:700}
+.vlak{flex:1;position:relative;min-height:0}
+iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff}
+.uitleg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:24px}
+.kaart{max-width:560px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:26px 28px;line-height:1.55}
+.kaart h2{margin:0 0 8px;font-size:20px}
+.kaart p{margin:0 0 12px;color:var(--muted)}
+.kaart ol{margin:0 0 14px 20px;padding:0;color:var(--muted)}
+button.knop{font:inherit;min-height:44px;padding:0 18px;border-radius:10px;border:none;background:var(--accent);color:#fff;font-weight:700;cursor:pointer}
+.smal{max-width:760px;margin:0 auto}
+</style>
+</head>
+<body>
+<div class="balk" role="tablist" aria-label="Rapportages">
+  <h1>Rapportages</h1>
+  <button class="sub on" role="tab" data-vlak="checklist">Checklist en terugkoppeling start</button>
+  <button class="sub" role="tab" data-vlak="verslag">Sessieverslag</button>
+  <button class="sub" role="tab" data-vlak="afronding">Terugkoppeling afronding</button>
+</div>
+
+<div class="vlak" id="v-checklist">
+  <div class="uitleg" id="geenChecklist" hidden>
+    <div class="kaart">
+      <h2>Checklist nog niet gekoppeld</h2>
+      <p>Hier komt je checklist Differentiaaldiagnostiek, met de terugkoppeling aan de bedrijfsarts en het adresboek. Het bestand staat alleen op je eigen computer en niet op GitHub, omdat er namen en het logo van de praktijk in staan.</p>
+      <button class="knop" onclick="post('kies-checklist')">Kies het bestand</button>
+    </div>
+  </div>
+</div>
+
+<div class="vlak" id="v-verslag" hidden></div>
+
+<div class="vlak" id="v-afronding" hidden>
+  <div class="uitleg">
+    <div class="kaart">
+      <h2>Terugkoppeling afronding volgt</h2>
+      <p>Dit onderdeel maakt de brief aan de bedrijfsarts aan het einde van het traject, met de behandeldoelen uit de start. Stuur Claude een voorbeeld van zo'n brief (zonder cliëntgegevens), dan wordt het hier gebouwd.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+function post(m){ if(window.chrome && chrome.webview) chrome.webview.postMessage(m); }
+const geladen={};
+function laadChecklist(){
+  fetch('eigen/checklist.html',{method:'HEAD',cache:'no-store'}).then(r=>{
+    if(!r.ok) throw 0;
+    document.getElementById('geenChecklist').hidden=true;
+    const oud=document.querySelector('#v-checklist iframe'); if(oud) oud.remove();
+    const f=document.createElement('iframe'); f.src='eigen/checklist.html?t='+Date.now(); f.title='Checklist en terugkoppeling';
+    document.getElementById('v-checklist').appendChild(f);
+  }).catch(()=>{ document.getElementById('geenChecklist').hidden=false; });
+}
+function toon(naam){
+  document.querySelectorAll('.sub').forEach(b=>b.classList.toggle('on',b.dataset.vlak===naam));
+  document.querySelectorAll('.vlak').forEach(v=>v.hidden=v.id!=='v-'+naam);
+  if(geladen[naam]) return;
+  geladen[naam]=true;
+  if(naam==='checklist') laadChecklist();
+  if(naam==='verslag'){
+    const f=document.createElement('iframe'); f.src='verslag.html'; f.title='Sessieverslag';
+    document.getElementById('v-verslag').appendChild(f);
+  }
+}
+document.querySelectorAll('.sub').forEach(b=>b.onclick=()=>toon(b.dataset.vlak));
+if(window.chrome && chrome.webview){
+  chrome.webview.addEventListener('message',ev=>{ if(ev.data==='checklist-ok') laadChecklist(); });
+}
+toon('checklist');
+</script>
+</body>
+</html>

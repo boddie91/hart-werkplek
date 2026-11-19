@@ -74,7 +74,7 @@ textarea{min-height:150px;resize:vertical}
       <div class="sub" id="samenvatting"></div>
     </div>
     <div>
-      <div class="clock" id="klok"></div>
+      <div style="display:flex;gap:14px;align-items:center;justify-content:flex-end"><button class="small" onclick="post('paneel')" title="Aanmeldpaneel rechts tonen of verbergen">Aanmeldpaneel</button><div class="clock" id="klok"></div></div>
       <div class="sub" id="datum" style="text-align:right"></div>
     </div>
   </div>
@@ -126,7 +126,8 @@ textarea{min-height:150px;resize:vertical}
           <button class="tile" onclick="post('tab:james')"><b>James</b><span>EPD</span></button>
           <button class="tile" onclick="post('tab:remarkable')"><b>reMarkable</b><span>notebooks en pdf's</span></button>
           <button class="tile" onclick="post('tab:caseload')"><b>Caseload</b><span>Excel</span></button>
-          <button class="tile" onclick="post('tab:dsmtool')"><b>DSM-tool</b><span>terugkoppeling</span></button>
+          <button class="tile" onclick="post('tab:rapportages')"><b>Rapportages</b><span>checklist en terugkoppeling</span></button>
+          <button class="tile" onclick="post('tab:dsm')"><b>DSM</b><span>naslag</span></button>
         </div>
       </div>
     <div class="card" data-tegel="klad">

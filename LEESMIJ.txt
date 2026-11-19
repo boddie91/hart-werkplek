@@ -8,7 +8,7 @@ Installeren (eenmalig, geen beheerdersrechten nodig)
 
 Eerste keer starten
 - Het programma opent schermvullend. Met F11 of de knop links onderin wissel je naar een gewoon venster.
-- Klik links op "Instellingen" en vul het adres van James in (en eventueel de caseload, de DSM-tool en je sjablonenmap).
+- Klik links op "Instellingen" en vul het adres van James in (en eventueel de caseload, je checklist en je sjablonenmap).
 - Log in elk tabblad een keer in. Het programma onthoudt dat, net als een browser.
 
 Meldingen dempen
@@ -54,3 +54,9 @@ Startpagina indelen (nieuw)
 - Sleep een tegel aan het puntjesgreepje rechtsboven om hem te verplaatsen.
 - Sleep de hoek rechtsonder om een tegel breder, smaller, hoger of lager te maken. Dubbelklik op die hoek voor automatische hoogte.
 - De indeling wordt onthouden. Met "Indeling herstellen" onderaan ga je terug naar de standaard.
+
+Versie 10
+- Startpagina: je aanmeldpaneel staat rechts als vaste kolom (zonder het tabblad Nieuw). Met de knop "Aanmeldpaneel" bovenin verberg of toon je het; de breedte pas je aan door de streep te verslepen.
+- Tabblad DSM: je DSM-5 dashboard (log een keer in op claude.ai).
+- Tabblad Rapportages: je checklist met de terugkoppeling start, het sessieverslag en (straks) de terugkoppeling afronding.
+- Klembord: knop "Open" om bijvoorbeeld een mailconcept (.eml) te openen.
