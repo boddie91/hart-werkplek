@@ -17,6 +17,8 @@ h1{margin:0;font-size:28px;font-weight:700}
 .card{background:var(--pane);border:1px solid var(--line);border-radius:14px;padding:16px 18px;position:relative;display:flex;flex-direction:column;min-width:0;box-sizing:border-box}
 .card[hidden]{display:none}
 .card.vast{overflow:auto}
+.card.vast iframe{min-height:0!important}
+body.slepen iframe{pointer-events:none}
 .card.vast textarea{flex:1;min-height:60px}
 .greep{margin-left:auto;align-self:center;margin-right:-6px;padding:2px 6px;border-radius:6px;color:var(--muted);cursor:grab;font-size:16px;line-height:1;opacity:.35;user-select:none}
 .card:hover .greep{opacity:1}
@@ -74,7 +76,7 @@ textarea{min-height:150px;resize:vertical}
       <div class="sub" id="samenvatting"></div>
     </div>
     <div>
-      <div style="display:flex;gap:14px;align-items:center;justify-content:flex-end"><button class="small" onclick="post('paneel')" title="Aanmeldpaneel rechts tonen of verbergen">Aanmeldpaneel</button><div class="clock" id="klok"></div></div>
+      <div class="clock" id="klok"></div>
       <div class="sub" id="datum" style="text-align:right"></div>
     </div>
   </div>
@@ -85,6 +87,10 @@ textarea{min-height:150px;resize:vertical}
         <p>Windows kan meldingen vanzelf stilzetten zolang een programma schermvullend open staat. Zet dat één keer aan: <b>Niet storen automatisch inschakelen → Bij gebruik van een app in volledig schermmodus</b>.</p>
         <div class="row"><button class="k primary" onclick="post('meldingen')">Open meldingsinstellingen</button><button class="k" onclick="hideHint()">Gedaan</button></div>
       </div>
+    <div class="card" data-tegel="aanmeld" id="aanmeldTegel">
+      <h2>Aanmeldpaneel <small>to do's en caseload</small></h2>
+      <iframe id="aanmeldFrame" title="Aanmeldpaneel" style="flex:1;width:100%;min-height:520px;border:1px solid var(--line);border-radius:10px;background:#fff"></iframe>
+    </div>
     <div class="card" data-tegel="inbox">
         <h2>Inbox <small id="inboxTijd">Outlook</small></h2>
         <div id="inbox"><div class="empty">Log één keer in op het tabblad Outlook. Daarna verschijnt je inbox hier vanzelf.</div></div>
@@ -126,8 +132,8 @@ textarea{min-height:150px;resize:vertical}
           <button class="tile" onclick="post('tab:james')"><b>James</b><span>EPD</span></button>
           <button class="tile" onclick="post('tab:remarkable')"><b>reMarkable</b><span>notebooks en pdf's</span></button>
           <button class="tile" onclick="post('tab:caseload')"><b>Caseload</b><span>Excel</span></button>
-          <button class="tile" onclick="post('tab:rapportages')"><b>Rapportages</b><span>checklist en terugkoppeling</span></button>
-          <button class="tile" onclick="post('tab:dsm')"><b>DSM</b><span>naslag</span></button>
+          <button class="tile" onclick="post('tab:rapportages')"><b>Rapportages</b><span>verslag, terugkoppeling, verwijzing</span></button>
+          <button class="tile" onclick="post('tab:dsm')"><b>DSM</b><span>naslag en checklist</span></button>
         </div>
       </div>
     <div class="card" data-tegel="klad">
@@ -274,6 +280,12 @@ function aanmeldTodo(){
 if(window.chrome && chrome.webview){
   chrome.webview.addEventListener('message',ev=>{
     const d=String(ev.data||'');
+    if(d.startsWith('paneel:')){
+      const u=d.slice(7), t=document.getElementById('aanmeldTegel'), f=document.getElementById('aanmeldFrame');
+      if(u==='uit'){ t.hidden=true; pasToe(); return; }
+      if(f.getAttribute('src')!==u) f.setAttribute('src',u);
+      return;
+    }
     if(!d.startsWith('inbox:')) return;
     try{ inboxItems=JSON.parse(d.slice(6)); renderInbox(); }catch(e){}
   });
@@ -281,8 +293,8 @@ if(window.chrome && chrome.webview){
 
 // ---------- tegels: slepen, schalen, onthouden ----------
 const ROW=8, GAP=16, MINW=3;
-const STANDAARD={order:['hint','inbox','todo','bellen','snel','klad','backup'],
-  w:{hint:4,inbox:4,todo:4,bellen:4,snel:4,klad:4,backup:4},h:{}};
+const STANDAARD={order:['hint','aanmeld','inbox','todo','bellen','snel','klad','backup'],
+  w:{hint:4,aanmeld:4,inbox:4,todo:4,bellen:4,snel:4,klad:4,backup:4},h:{aanmeld:680}};
 const grid=document.getElementById('grid');
 function kolommen(){ return getComputedStyle(grid).gridTemplateColumns.split(' ').length; }
 function indeling(){
@@ -299,8 +311,8 @@ grid.querySelectorAll('[data-tegel]').forEach(c=>{
   const hoek=document.createElement('div'); hoek.className='hoek'; hoek.title='Sleep om groter of kleiner te maken; dubbelklik voor automatische hoogte'; c.appendChild(hoek);
   hoek.addEventListener('pointerdown',e=>startRekken(e,c,id));
   hoek.addEventListener('dblclick',()=>{ delete indeling().h[id]; save(); pasToe(); });
-  c.addEventListener('dragstart',e=>{ sleep=id; c.classList.add('sleept'); e.dataTransfer.effectAllowed='move'; e.dataTransfer.setData('text/plain',id); });
-  c.addEventListener('dragend',()=>{ c.draggable=false; c.classList.remove('sleept'); sleep=null; document.querySelectorAll('.doel').forEach(x=>x.classList.remove('doel')); });
+  c.addEventListener('dragstart',e=>{ document.body.classList.add('slepen'); sleep=id; c.classList.add('sleept'); e.dataTransfer.effectAllowed='move'; e.dataTransfer.setData('text/plain',id); });
+  c.addEventListener('dragend',()=>{ document.body.classList.remove('slepen'); c.draggable=false; c.classList.remove('sleept'); sleep=null; document.querySelectorAll('.doel').forEach(x=>x.classList.remove('doel')); });
   c.addEventListener('dragover',e=>{ if(!sleep||sleep===id) return; e.preventDefault(); c.classList.add('doel'); });
   c.addEventListener('dragleave',()=>c.classList.remove('doel'));
   c.addEventListener('drop',e=>{
@@ -337,14 +349,14 @@ function startRekken(e,c,id){
   const L=indeling(), n=kolommen();
   const kolB=(grid.clientWidth-GAP*(n-1))/n;
   const r=c.getBoundingClientRect(), x0=e.clientX, y0=e.clientY;
-  c.classList.add('rekt');
+  c.classList.add('rekt'); document.body.classList.add('slepen');
   const zet=ev=>{
     const w=Math.round((r.width+ev.clientX-x0+GAP)/(kolB+GAP));
     L.w[id]=Math.min(n,Math.max(MINW,w));
     L.h[id]=Math.max(110,Math.round(r.height+ev.clientY-y0));
     pasToe();
   };
-  const klaar=()=>{ document.removeEventListener('pointermove',zet); document.removeEventListener('pointerup',klaar); c.classList.remove('rekt'); save(); };
+  const klaar=()=>{ document.removeEventListener('pointermove',zet); document.removeEventListener('pointerup',klaar); c.classList.remove('rekt'); document.body.classList.remove('slepen'); save(); };
   document.addEventListener('pointermove',zet); document.addEventListener('pointerup',klaar);
 }
 function herstelIndeling(){ S.layout=JSON.parse(JSON.stringify(STANDAARD)); save(); pasToe(); toast('Indeling hersteld'); }

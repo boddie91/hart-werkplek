@@ -22,6 +22,12 @@ textarea{min-height:74px;resize:vertical}
 .chip{font:inherit;font-size:13px;border:1px solid var(--line);background:#fff;border-radius:20px;padding:5px 11px;cursor:pointer;color:var(--ink)}
 .chip:hover{border-color:var(--muted)}
 .blok{display:flex;align-items:center;gap:8px;padding:4px 0;cursor:pointer}
+.extra{margin:2px 0 10px 25px;display:flex;flex-direction:column;gap:6px}
+.extra select{font-size:13.5px}
+.stapjes{font-size:12.5px;color:var(--muted);line-height:1.45;background:var(--chip);border-radius:8px;padding:6px 9px}
+.stapjes:empty{display:none}
+.stapjes ol{margin:0;padding-left:18px}
+label.mini{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:6px;cursor:pointer}
 .blok input{width:17px;height:17px;accent-color:var(--accent)}
 button.act{font:inherit;min-height:44px;padding:0 16px;border-radius:10px;border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer;width:100%;margin-top:8px}
 button.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700}
@@ -39,10 +45,12 @@ button.primary{background:var(--accent);border-color:var(--accent);color:#fff;fo
 .kop .r{text-align:right;color:#444}
 .focus{color:#222}
 .sec{display:flex;flex-direction:column;min-height:0}
-.sec.g1{flex:1 1 0;min-height:17mm}
+.sec.g1{flex:1 1 0;min-height:22mm}
 .sec.g2{flex:2 1 0;min-height:30mm}
 .sec.g3{flex:3 1 0;min-height:30mm}
-.lijnen{flex:1;min-height:8mm;background-image:repeating-linear-gradient(to bottom,transparent 0,transparent calc(7.5mm - .25mm),#b5b5b5 calc(7.5mm - .25mm),#b5b5b5 7.5mm)}
+.kopregel{display:flex;justify-content:space-between;align-items:baseline;gap:4mm;flex-wrap:wrap}
+.kopregel h3{margin:0}
+.lijnen{flex:1;min-height:15mm;background-position:0 -2mm;background-image:repeating-linear-gradient(to bottom,transparent 0,transparent calc(7.5mm - .25mm),#b5b5b5 calc(7.5mm - .25mm),#b5b5b5 7.5mm)}
 .vak{flex:1;min-height:24mm;border:.3mm solid #888;border-radius:1.5mm}
 .hint{color:#555;font-size:.92em}
 .opts{display:flex;flex-wrap:wrap;gap:1.2mm 5mm;align-items:center}
@@ -67,13 +75,13 @@ button.primary{background:var(--accent);border-color:var(--accent);color:#fff;fo
 <div class="app">
   <div class="ctrl">
     <h1>Sessieblad bouwer</h1>
-    <div class="sub">Kies een opzet, pas aan wat je wilt en zet het blad als pdf op het klembord. Gebruik alleen initialen: het blad komt op je reMarkable te staan.</div>
+    <div class="sub">Kies een opzet, pas aan wat je wilt en zet het blad als pdf op het klembord. Het blad krijgt als naam de voornaam en het sessienummer.</div>
 
     <label class="t" style="margin-top:6px">Snelle opzet</label>
     <div class="chips" id="presets"></div>
 
     <div class="row" style="margin-top:12px">
-      <div><label class="t" style="margin-top:0" for="ini">Initialen</label><input type="text" id="ini" maxlength="6" placeholder="bijv. S."></div>
+      <div><label class="t" style="margin-top:0" for="ini">Voornaam</label><input type="text" id="ini" maxlength="30" placeholder="bijv. Noor"></div>
       <div><label class="t" style="margin-top:0" for="nr">Sessie nr.</label><input type="text" id="nr" inputmode="numeric"></div>
     </div>
     <label class="t" for="datum">Datum</label>
@@ -84,10 +92,20 @@ button.primary{background:var(--accent);border-color:var(--accent);color:#fff;fo
     <label class="t">Blokken</label>
     <div id="blokken"></div>
 
-    <div id="xPlan"><label class="t" for="plan">Plan: één punt per regel</label><textarea id="plan" placeholder="Huiswerk bespreken&#10;Oefening doen&#10;Nieuwe afspraak"></textarea></div>
-    <div id="xIntv"><label class="t" for="iv1">Interventie op het blad</label><select id="iv1"></select><select id="iv2" style="margin-top:6px"></select></div>
-    <div id="xPe"><label class="t" for="pe">Onderwerp psycho-educatie</label><select id="pe"></select></div>
-    <div id="xSchaal"><label class="t" for="schaal">Schaalvraag over</label><input type="text" id="schaal" placeholder="bijv. spanning, stemming, vertrouwen"></div>
+    <div id="extras" hidden>
+      <div class="extra" id="xPlan"><textarea id="plan" aria-label="Plan, één punt per regel" placeholder="Eén punt per regel, bijv.&#10;Huiswerk bespreken&#10;Oefening doen"></textarea></div>
+      <div class="extra" id="xIntv">
+        <div class="row"><select id="iv1s" aria-label="Soort interventie"></select><select id="iv1" aria-label="Interventie"></select></div>
+        <div class="stapjes" id="iv1stappen"></div>
+        <label class="mini"><input type="checkbox" id="iv2aan"> Tweede interventie</label>
+        <div id="iv2blok" hidden>
+          <div class="row"><select id="iv2s" aria-label="Soort tweede interventie"></select><select id="iv2" aria-label="Tweede interventie"></select></div>
+          <div class="stapjes" id="iv2stappen"></div>
+        </div>
+      </div>
+      <div class="extra" id="xPe"><select id="pe" aria-label="Onderwerp psycho-educatie"></select><div class="stapjes" id="pestappen"></div></div>
+      <div class="extra" id="xSchaal"><input type="text" id="schaal" aria-label="Schaalvraag over" placeholder="Schaalvraag over… (bijv. spanning)"></div>
+    </div>
 
     <label class="t" for="formaat">Formaat</label>
     <select id="formaat"><option value="rm">reMarkable (schermvullend)</option><option value="a4">A4</option></select>
@@ -136,10 +154,33 @@ function opties(lijst,leeg){
   lijst.forEach(d=>{ if(d.s!==groep){ if(groep) h+='</optgroup>'; groep=d.s; h+='<optgroup label="'+esc(d.s)+'">'; } h+='<option>'+esc(d.n)+'</option>'; });
   return h+(groep?'</optgroup>':'');
 }
-$('iv1').innerHTML=opties(IV,'');
-$('iv2').innerHTML=opties(IV,'Geen tweede');
+const SOORTEN=[...new Set(IV.map(d=>d.s))];
+function vulSoort(sel){ sel.innerHTML=SOORTEN.map(s=>'<option>'+esc(s)+'</option>').join(''); }
+function vulIntv(soortSel,intvSel,keuze){
+  const lijst=IV.filter(d=>d.s===soortSel.value);
+  intvSel.innerHTML=lijst.map(d=>'<option>'+esc(d.n)+'</option>').join('');
+  if(keuze && lijst.some(d=>d.n===keuze)) intvSel.value=keuze;
+}
+function zetIntv(nr,naam){
+  const d=IV.find(x=>x.n===naam); if(!d) return;
+  $('iv'+nr+'s').value=d.s; vulIntv($('iv'+nr+'s'),$('iv'+nr),naam); toonStappen();
+}
+function stappenHtml(naam){ const d=D.find(x=>x.n===naam); return d?'<ol>'+d.h.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ol>':''; }
+function toonStappen(){
+  $('iv1stappen').innerHTML=stappenHtml($('iv1').value);
+  $('iv2stappen').innerHTML=$('iv2aan').checked?stappenHtml($('iv2').value):'';
+  const p=PE.find(x=>x.n===$('pe').value);
+  $('pestappen').innerHTML=p&&p.u?esc(p.u.length>220?p.u.slice(0,220)+'…':p.u):'';
+}
+vulSoort($('iv1s')); vulSoort($('iv2s'));
 $('pe').innerHTML=PE.map(d=>'<option>'+esc(d.n)+'</option>').join('');
-$('iv1').value='Holding';
+zetIntv(1,'Holding'); zetIntv(2,'Gedachten uitdagen');
+['1','2'].forEach(n=>{
+  $('iv'+n+'s').addEventListener('change',()=>{ vulIntv($('iv'+n+'s'),$('iv'+n)); toonStappen(); maak(); });
+  $('iv'+n).addEventListener('change',()=>{ toonStappen(); maak(); });
+});
+$('iv2aan').addEventListener('change',()=>{ $('iv2blok').hidden=!$('iv2aan').checked; toonStappen(); maak(); });
+$('pe').addEventListener('change',()=>{ toonStappen(); maak(); });
 
 const vandaag=()=>{const d=new Date(); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,10);};
 $('datum').value=vandaag();
@@ -147,12 +188,14 @@ $('datum').value=vandaag();
 $('presets').innerHTML=PRESETS.map((p,i)=>'<button class="chip" onclick="preset('+i+')">'+p[0]+'</button>').join('');
 function preset(i){
   const p=PRESETS[i]; aan.clear(); p[1].forEach(b=>aan.add(b));
-  Object.keys(p[2]).forEach(k=>{ $(k).value=p[2][k]; });
+  Object.keys(p[2]).forEach(k=>{ if(k==='iv1') zetIntv(1,p[2][k]); else $(k).value=p[2][k]; });
   tekenBlokken(); maak();
 }
+const EXTRA={plan:'xPlan',intv:'xIntv',pe:'xPe',schaal:'xSchaal'};
 function tekenBlokken(){
-  $('blokken').innerHTML=BLOKKEN.map(([k,l])=>'<label class="blok"><input type="checkbox" '+(aan.has(k)?'checked':'')+' onchange="zet(\''+k+'\',this.checked)">'+l+'</label>').join('');
-  $('xPlan').hidden=!aan.has('plan'); $('xIntv').hidden=!aan.has('intv'); $('xPe').hidden=!aan.has('pe'); $('xSchaal').hidden=!aan.has('schaal');
+  Object.values(EXTRA).forEach(id=>$('extras').appendChild($(id)));
+  $('blokken').innerHTML=BLOKKEN.map(([k,l])=>'<div data-rij="'+k+'"><label class="blok"><input type="checkbox" '+(aan.has(k)?'checked':'')+' onchange="zet(\''+k+'\',this.checked)">'+l+'</label></div>').join('');
+  Object.entries(EXTRA).forEach(([k,id])=>{ if(aan.has(k)) document.querySelector('[data-rij="'+k+'"]').appendChild($(id)); });
 }
 function zet(k,v){ v?aan.add(k):aan.delete(k); tekenBlokken(); maak(); }
 
@@ -167,18 +210,18 @@ function maak(){
   $('pagina').textContent='@page{size:'+(a4?'210mm 297mm':'156mm 208mm')+';margin:0}';
   const nr=$('nr').value.trim(), ini=$('ini').value.trim(), d=$('datum').value;
   const datum=d?new Date(d+'T12:00').toLocaleDateString('nl-NL',{weekday:'long',day:'numeric',month:'long'}):'';
-  let h='<div class="kop"><h2>Sessie'+(nr?' '+esc(nr):'')+'</h2><div class="r">'+esc(ini)+(ini&&datum?' · ':'')+esc(datum)+'</div></div>';
+  let h='<div class="kop"><h2>'+(esc(ini)||'&nbsp;')+'</h2><div class="r">'+esc(datum)+'</div></div>';
   const focus=$('focus').value.trim();
   if(focus) h+='<div class="focus"><b>Focus:</b> '+esc(focus)+'</div>';
 
-  if(aan.has('terug')) h+='<div class="sec g1"><h3>Terugblik</h3><div class="opts"><span class="hint">Huiswerk:</span>'+['gedaan','deels','niet','n.v.t.'].map(o=>'<span class="opt"><span class="rond"></span>'+o+'</span>').join('')+'</div>'+lijnen+'</div>';
+  if(aan.has('terug')) h+='<div class="sec g1"><div class="kopregel"><h3>Terugblik</h3><div class="opts"><span class="hint">Huiswerk</span>'+['gedaan','deels','niet','n.v.t.'].map(o=>'<span class="opt"><span class="rond"></span>'+o+'</span>').join('')+'</div></div>'+lijnen+'</div>';
   if(aan.has('plan')){
     const punten=$('plan').value.split('\n').map(x=>x.trim()).filter(Boolean).slice(0,6);
     h+='<div class="sec"><h3>Plan</h3>'+(punten.length?punten:['','','']).map(p=>'<div class="stap"><span class="hok"></span><span style="flex:1;'+(p?'':'border-bottom:.25mm solid #b5b5b5;height:5mm')+'">'+esc(p)+'</span></div>').join('')+'</div>';
   }
   if(aan.has('intv')){
     h+=intvBlok($('iv1').value);
-    if($('iv2').value && $('iv2').value!==$('iv1').value) h+=intvBlok($('iv2').value);
+    if($('iv2aan').checked && $('iv2').value!==$('iv1').value) h+=intvBlok($('iv2').value);
   }
   if(aan.has('pe')){
     const p=PE.find(x=>x.n===$('pe').value);
@@ -189,7 +232,7 @@ function maak(){
     h+='<div class="sec"><h3>Schaalvraag'+(over?': '+esc(over):'')+'</h3><div class="schaal">'+[0,1,2,3,4,5,6,7,8,9,10].map(n=>'<span>'+n+'</span>').join('')+'</div><div class="hint" style="margin-top:1.2mm">Wat maakt dat het niet lager is? Hoe ziet één punt hoger eruit?</div></div>';
   }
   if(aan.has('reactie')) h+='<div class="sec g1"><h3>Reactie cliënt</h3>'+lijnen+'</div>';
-  if(aan.has('voortgang')) h+='<div class="sec g1"><h3>Voortgang op doelen</h3><div class="opts">'+['vooruit','stabiel','achteruit','nog niet te zeggen'].map(o=>'<span class="opt"><span class="rond"></span>'+o+'</span>').join('')+'</div>'+lijnen+'</div>';
+  if(aan.has('voortgang')) h+='<div class="sec g1"><div class="kopregel"><h3>Voortgang op doelen</h3><div class="opts">'+['vooruit','stabiel','achteruit','nog niet te zeggen'].map(o=>'<span class="opt"><span class="rond"></span>'+o+'</span>').join('')+'</div></div>'+lijnen+'</div>';
   if(aan.has('afspraken')) h+='<div class="sec g1"><h3>Afspraken en huiswerk</h3>'+lijnen+'</div>';
   if(aan.has('volgende')) h+='<div class="sec g1"><h3>Volgende sessie</h3>'+lijnen+'</div>';
   if(aan.has('notities')) h+='<div class="sec g3"><h3>Notities</h3>'+lijnen+'</div>';
@@ -203,7 +246,7 @@ function past(){ const s=$('sheet'); return s.scrollHeight<=s.clientHeight+2; }
 function maakPdf(){
   if(!past()){ zeg('Dit past niet op één pagina. Zet een blok uit of kies A4.','warn'); return; }
   const a4=$('formaat').value==='a4';
-  const naam=['Sessieblad',$('ini').value.trim(),$('nr').value.trim()?'sessie '+$('nr').value.trim():''].filter(Boolean).join(' ');
+  const naam=[$('ini').value.trim(),$('nr').value.trim()].filter(Boolean).join(' ')||'Sessieblad';
   zeg('Bezig…');
   post('pdf:'+(a4?'210x297':'156x208')+'|'+naam);
 }

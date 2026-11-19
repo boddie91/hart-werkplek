@@ -169,7 +169,6 @@ class MainForm : Form
 
     static readonly Dictionary<string, string> Standaard = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
     {
-        { "dsm", "https://claude.ai/artifact/TKB7Ua1vEg58pqWUvwcj8G" },
         { "aanmeldpaneel", "https://boddie91.github.io/hart-aanmeldpaneel/taskpane.html" }
     };
 
@@ -191,7 +190,7 @@ class MainForm : Form
         AddTab("james", "James", null);
         AddTab("remarkable", "reMarkable", null);
         AddTab("caseload", "Caseload", null);
-        AddTab("dsm", "DSM", null);
+        AddTab("dsm", "DSM", "https://werkplek.local/dsm.html");
         AddTab("rapportages", "Rapportages", "https://werkplek.local/rapportages.html");
         AddTab("interventies", "Interventies", "https://werkplek.local/interventies.html");
         AddTab("sessieblad", "Sessieblad", "https://werkplek.local/sessieblad.html");
@@ -367,7 +366,6 @@ class MainForm : Form
         v.DefaultBackgroundColor = Color.White;
         t.View = v;
         if (t.Key == "james") BuildSplit(t, v);
-        else if (t.Key == "start") BuildStartSplit(t, v);
         else t.Host = v;
         t.Host.Visible = false;
         content.Controls.Add(t.Host);
@@ -375,6 +373,16 @@ class MainForm : Form
         Setup(v.CoreWebView2, t);
         if (t.Key == "outlook")
             await v.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(OutlookScript);
+        if (t.Key == "start")
+        {
+            await v.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(PaneelScript);
+            CoreWebView2 core = v.CoreWebView2;
+            core.NavigationCompleted += delegate
+            {
+                string u = Cfg("aanmeldpaneel").Equals("uit", StringComparison.OrdinalIgnoreCase) ? "uit" : ResolveUrl("aanmeldpaneel", "Aanmeldpaneel");
+                try { core.PostWebMessageAsString("paneel:" + u); } catch { }
+            };
+        }
         v.CoreWebView2.Navigate(t.Url);
     }
 
@@ -488,9 +496,12 @@ class MainForm : Form
         {
             BeginInvoke(new Action(OpenSettings));
         }
-        else if (m == "paneel")
+        else if (m == "checklist")
         {
-            BeginInvoke(new Action(TogglePaneel));
+            Tab d = tabs["dsm"];
+            if (d.View != null && d.View.CoreWebView2 != null) d.View.CoreWebView2.PostWebMessageAsString("toon-checklist");
+            else d.Url = "https://werkplek.local/dsm.html#checklist";
+            ShowTab(d);
         }
         else if (m == "kies-checklist")
         {
@@ -659,11 +670,7 @@ class MainForm : Form
         else SelectPaneTab(t, t.Pane[t.Pane.Count - 1]);
     }
 
-    // ---------- startpagina met het aanmeldpaneel als vaste kolom ----------
-    SplitContainer startSplit;
-    WebView2 paneel;
-    string PaneelBreedtePad { get { return Path.Combine(dataDir, "paneelbreedte.txt"); } }
-
+    // ---------- aanmeldpaneel (als tegel op de startpagina) ----------
     const string PaneelScript = @"
 (function(){
   if (location.hostname !== 'boddie91.github.io' || location.pathname.indexOf('hart-aanmeldpaneel') < 0) return;
@@ -678,77 +685,6 @@ class MainForm : Form
     }
   }, 400);
 })();";
-
-    void BuildStartSplit(Tab t, WebView2 main)
-    {
-        SplitContainer sc = new SplitContainer();
-        sc.Dock = DockStyle.Fill;
-        sc.SplitterWidth = S(6);
-        sc.BackColor = Line;
-        sc.FixedPanel = FixedPanel.Panel2;
-        sc.Panel1.Controls.Add(main);
-        t.Host = sc;
-        startSplit = sc;
-
-        string url = ResolveUrl("aanmeldpaneel", "Aanmeldpaneel");
-        if (Cfg("aanmeldpaneel").Equals("uit", StringComparison.OrdinalIgnoreCase)) { sc.Panel2Collapsed = true; return; }
-
-        paneel = new WebView2();
-        paneel.Dock = DockStyle.Fill;
-        paneel.DefaultBackgroundColor = Color.White;
-        sc.Panel2.Controls.Add(paneel);
-
-        int breedte = S(420);
-        try { int b; if (int.TryParse(File.ReadAllText(PaneelBreedtePad).Trim(), out b) && b > 200) breedte = b; } catch { }
-        bool gezet = false;
-        sc.SizeChanged += delegate
-        {
-            if (gezet || sc.Width < breedte + S(400)) return;
-            gezet = true;
-            ZetPaneelBreedte(breedte);
-        };
-        sc.SplitterMoved += delegate
-        {
-            try { File.WriteAllText(PaneelBreedtePad, (sc.Width - sc.SplitterDistance - sc.SplitterWidth).ToString()); } catch { }
-        };
-        StartPaneel(url);
-    }
-
-    void ZetPaneelBreedte(int breedte)
-    {
-        if (startSplit == null) return;
-        try
-        {
-            int d = startSplit.Width - breedte - startSplit.SplitterWidth;
-            if (d > S(300)) startSplit.SplitterDistance = d;
-        }
-        catch { }
-    }
-
-    async void StartPaneel(string url)
-    {
-        try
-        {
-            await paneel.EnsureCoreWebView2Async(env);
-            paneel.CoreWebView2.NewWindowRequested += OnNewWindow;
-            paneel.CoreWebView2.DownloadStarting += OnDownload;
-            await paneel.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(PaneelScript);
-            paneel.CoreWebView2.Navigate(url);
-        }
-        catch { }
-    }
-
-    void TogglePaneel()
-    {
-        if (startSplit == null || paneel == null) return;
-        startSplit.Panel2Collapsed = !startSplit.Panel2Collapsed;
-        if (!startSplit.Panel2Collapsed)
-        {
-            int breedte = S(420);
-            try { int b; if (int.TryParse(File.ReadAllText(PaneelBreedtePad).Trim(), out b) && b > 200) breedte = b; } catch { }
-            ZetPaneelBreedte(breedte);
-        }
-    }
 
     // ---------- checklist (eigen bestand, niet op GitHub) ----------
     string ChecklistDoel { get { return Path.Combine(webDir, "eigen", "checklist.html"); } }
@@ -930,22 +866,162 @@ class MainForm : Form
         return b;
     }
 
+    // Slepen naar het klembord: gewone bestanden, "virtuele" bestanden uit een webpagina, of een link
+    static string DropUrl(IDataObject d)
+    {
+        try
+        {
+            string u = null;
+            if (d.GetDataPresent("UniformResourceLocatorW"))
+            {
+                MemoryStream ms = d.GetData("UniformResourceLocatorW") as MemoryStream;
+                if (ms != null) u = Encoding.Unicode.GetString(ms.ToArray()).TrimEnd('\0');
+            }
+            if (string.IsNullOrEmpty(u) && d.GetDataPresent(DataFormats.UnicodeText))
+                u = (d.GetData(DataFormats.UnicodeText) as string ?? "").Trim();
+            if (!string.IsNullOrEmpty(u) && (u.StartsWith("https://") || u.StartsWith("http://")) && u.IndexOf('\n') < 0) return u;
+        }
+        catch { }
+        return null;
+    }
+
     void ClipDragEnter(object sender, DragEventArgs e)
     {
-        e.Effect = e.Data.GetDataPresent(DataFormats.FileDrop) ? DragDropEffects.Copy : DragDropEffects.None;
+        bool ok = e.Data.GetDataPresent(DataFormats.FileDrop) || e.Data.GetDataPresent("FileGroupDescriptorW") || DropUrl(e.Data) != null;
+        e.Effect = ok ? DragDropEffects.Copy : DragDropEffects.None;
     }
 
     void ClipDragDrop(object sender, DragEventArgs e)
     {
+        int n = 0;
         string[] files = e.Data.GetData(DataFormats.FileDrop) as string[];
-        if (files == null) return;
-        foreach (string f in files)
+        if (files != null)
         {
-            if (!File.Exists(f)) continue;
-            if (Path.GetDirectoryName(f).TrimEnd('\\') == clipDir.TrimEnd('\\')) continue;
-            try { File.Copy(f, UniquePath(Path.GetFileName(f))); } catch { }
+            foreach (string f in files)
+            {
+                if (!File.Exists(f)) continue;
+                if (Path.GetDirectoryName(f).TrimEnd('\\') == clipDir.TrimEnd('\\')) continue;
+                try { File.Copy(f, UniquePath(Path.GetFileName(f))); n++; } catch { }
+            }
+        }
+        if (n == 0 && e.Data.GetDataPresent("FileGroupDescriptorW")) n = SaveVirtualFiles(e.Data);
+        if (n == 0)
+        {
+            string url = DropUrl(e.Data);
+            if (url != null) DownloadVanLink(url);
         }
         RefreshClips();
+    }
+
+    [DllImport("ole32.dll")] static extern void ReleaseStgMedium(ref System.Runtime.InteropServices.ComTypes.STGMEDIUM pmedium);
+    [DllImport("kernel32.dll")] static extern IntPtr GlobalLock(IntPtr hMem);
+    [DllImport("kernel32.dll")] static extern bool GlobalUnlock(IntPtr hMem);
+    [DllImport("kernel32.dll")] static extern UIntPtr GlobalSize(IntPtr hMem);
+
+    int SaveVirtualFiles(IDataObject data)
+    {
+        int saved = 0;
+        try
+        {
+            MemoryStream ms = data.GetData("FileGroupDescriptorW") as MemoryStream;
+            if (ms == null) return 0;
+            byte[] b = ms.ToArray();
+            int count = BitConverter.ToInt32(b, 0);
+            System.Runtime.InteropServices.ComTypes.IDataObject com = data as System.Runtime.InteropServices.ComTypes.IDataObject;
+            if (com == null) return 0;
+            short cf = (short)DataFormats.GetFormat("FileContents").Id;
+            for (int i = 0; i < count && i < 50; i++)
+            {
+                int off = 4 + i * 592;
+                if (off + 592 > b.Length) break;
+                string name = Encoding.Unicode.GetString(b, off + 72, 520);
+                int z = name.IndexOf('\0'); if (z >= 0) name = name.Substring(0, z);
+                name = Path.GetFileName(name);
+                if (name.Length == 0) name = "bestand";
+                foreach (char c in Path.GetInvalidFileNameChars()) name = name.Replace(c, '-');
+
+                System.Runtime.InteropServices.ComTypes.FORMATETC fmt = new System.Runtime.InteropServices.ComTypes.FORMATETC();
+                fmt.cfFormat = cf;
+                fmt.dwAspect = System.Runtime.InteropServices.ComTypes.DVASPECT.DVASPECT_CONTENT;
+                fmt.lindex = i;
+                fmt.ptd = IntPtr.Zero;
+                fmt.tymed = System.Runtime.InteropServices.ComTypes.TYMED.TYMED_ISTREAM | System.Runtime.InteropServices.ComTypes.TYMED.TYMED_HGLOBAL;
+                System.Runtime.InteropServices.ComTypes.STGMEDIUM med;
+                try { com.GetData(ref fmt, out med); } catch { continue; }
+                try
+                {
+                    string path = UniquePath(name);
+                    if (med.tymed == System.Runtime.InteropServices.ComTypes.TYMED.TYMED_ISTREAM)
+                    {
+                        System.Runtime.InteropServices.ComTypes.IStream st = (System.Runtime.InteropServices.ComTypes.IStream)Marshal.GetObjectForIUnknown(med.unionmember);
+                        using (FileStream fs = File.Create(path))
+                        {
+                            byte[] buf = new byte[65536];
+                            IntPtr pRead = Marshal.AllocHGlobal(4);
+                            try
+                            {
+                                while (true)
+                                {
+                                    st.Read(buf, buf.Length, pRead);
+                                    int r = Marshal.ReadInt32(pRead);
+                                    if (r <= 0) break;
+                                    fs.Write(buf, 0, r);
+                                }
+                            }
+                            finally { Marshal.FreeHGlobal(pRead); }
+                        }
+                        saved++;
+                    }
+                    else if (med.tymed == System.Runtime.InteropServices.ComTypes.TYMED.TYMED_HGLOBAL)
+                    {
+                        IntPtr p = GlobalLock(med.unionmember);
+                        try
+                        {
+                            int size = (int)GlobalSize(med.unionmember).ToUInt32();
+                            byte[] buf = new byte[size];
+                            Marshal.Copy(p, buf, 0, size);
+                            File.WriteAllBytes(path, buf);
+                            saved++;
+                        }
+                        finally { GlobalUnlock(med.unionmember); }
+                    }
+                }
+                catch { }
+                finally { try { ReleaseStgMedium(ref med); } catch { } }
+            }
+        }
+        catch { }
+        return saved;
+    }
+
+    // Een gesleepte link downloaden in het tabblad waar hij vandaan komt (met je inlog), zodat hij op het klembord komt
+    void DownloadVanLink(string url)
+    {
+        Uri u;
+        if (!Uri.TryCreate(url, UriKind.Absolute, out u)) return;
+        Tab bron = null;
+        foreach (Tab t in order)
+        {
+            if (t.View == null || t.View.CoreWebView2 == null) continue;
+            Uri tu;
+            if (Uri.TryCreate(t.View.CoreWebView2.Source, UriKind.Absolute, out tu) && tu.Host == u.Host) { bron = t; break; }
+        }
+        if (bron == null) { Tab r; if (tabs.TryGetValue("remarkable", out r) && r.View != null && r.View.CoreWebView2 != null) bron = r; }
+        if (bron == null) return;
+        string js = "(function(){var a=document.createElement('a');a.href=" + JsString(url) + ";a.download='';a.rel='noopener';document.body.appendChild(a);a.click();a.remove();})();";
+        try { bron.View.CoreWebView2.ExecuteScriptAsync(js); } catch { }
+    }
+
+    static string JsString(string s)
+    {
+        StringBuilder sb = new StringBuilder("'");
+        foreach (char c in s)
+        {
+            if (c == '\\' || c == '\'') sb.Append('\\').Append(c);
+            else if (c < 32 || c == '<' || c == '>') sb.Append("\\u").Append(((int)c).ToString("x4"));
+            else sb.Append(c);
+        }
+        return sb.Append("'").ToString();
     }
 
     string UniquePath(string name)

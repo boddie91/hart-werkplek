@@ -60,3 +60,10 @@ Versie 10
 - Tabblad DSM: je DSM-5 dashboard (log een keer in op claude.ai).
 - Tabblad Rapportages: je checklist met de terugkoppeling start, het sessieverslag en (straks) de terugkoppeling afronding.
 - Klembord: knop "Open" om bijvoorbeeld een mailconcept (.eml) te openen.
+
+Versie 11
+- Tabblad DSM: je DSM-5 dashboard staat nu in het programma zelf (geen inlog op claude.ai), met daarnaast je checklist differentiaaldiagnostiek.
+- Tabblad Rapportages: terugkoppeling start (verwijst naar de checklist), sessieverslag, terugkoppeling afronding (volgt) en verwijzing en advies.
+- Startpagina: het aanmeldpaneel is een tegel geworden die je kunt verplaatsen en groter of kleiner kunt maken.
+- Sessieblad: voornaam bovenaan en als bestandsnaam (bijv. "Noor 4"); keuzemenu per soort interventie met de stappen erbij.
+- Klembord: je kunt nu ook bestanden of links uit een webpagina (zoals reMarkable) naar het klembord slepen.

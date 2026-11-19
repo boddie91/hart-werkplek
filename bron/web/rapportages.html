@@ -4,40 +4,65 @@
 <meta charset="UTF-8">
 <title>Rapportages – Hart Werkplek</title>
 <style>
-:root{--bg:#eef0f4;--ink:#1d2433;--muted:#5d6678;--line:#dde1ea;--accent:#b23a5b;--accent-soft:#f8e6ec}
+:root{--bg:#eef0f4;--ink:#1d2433;--muted:#5d6678;--line:#dde1ea;--accent:#b23a5b;--accent-soft:#f8e6ec;--chip:#eef1f7;--ok:#2f7a55}
 *{box-sizing:border-box}
 html,body{height:100%}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:"Segoe UI",system-ui,sans-serif;font-size:15px;display:flex;flex-direction:column}
-.balk{display:flex;align-items:flex-end;gap:4px;padding:14px 22px 0;background:#fff;border-bottom:1px solid var(--line)}
+.balk{display:flex;align-items:flex-end;gap:4px;padding:14px 22px 0;background:#fff;border-bottom:1px solid var(--line);flex-wrap:wrap}
 .balk h1{font-size:19px;margin:0 22px 10px 0}
-.sub{font:inherit;border:none;background:none;padding:10px 14px;color:var(--muted);border-bottom:2px solid transparent;cursor:pointer;margin-bottom:-1px}
-.sub:hover{color:var(--ink)}
-.sub.on{color:var(--accent);border-bottom-color:var(--accent);font-weight:700}
-.vlak{flex:1;position:relative;min-height:0}
+.hoofdtab{font:inherit;border:none;background:none;padding:10px 14px;color:var(--muted);border-bottom:2px solid transparent;cursor:pointer;margin-bottom:-1px}
+.hoofdtab:hover{color:var(--ink)}
+.hoofdtab.on{color:var(--accent);border-bottom-color:var(--accent);font-weight:700}
+.vlak{flex:1;position:relative;min-height:0;overflow:auto}
 iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff}
-.uitleg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:24px}
-.kaart{max-width:560px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:26px 28px;line-height:1.55}
+.midden{min-height:100%;display:flex;align-items:center;justify-content:center;padding:24px}
+.kaart{max-width:600px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:26px 28px;line-height:1.55}
 .kaart h2{margin:0 0 8px;font-size:20px}
 .kaart p{margin:0 0 12px;color:var(--muted)}
-.kaart ol{margin:0 0 14px 20px;padding:0;color:var(--muted)}
-button.knop{font:inherit;min-height:44px;padding:0 18px;border-radius:10px;border:none;background:var(--accent);color:#fff;font-weight:700;cursor:pointer}
-.smal{max-width:760px;margin:0 auto}
+.kaart ul{margin:0 0 16px 18px;padding:0;color:var(--muted)}
+button.knop{font:inherit;min-height:44px;padding:0 18px;border-radius:10px;border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer}
+button.knop.primair{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700}
+
+/* verwijzing en advies */
+.vw{max-width:1180px;margin:0 auto;padding:22px 24px 40px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px;align-items:start}
+@media(max-width:980px){.vw{grid-template-columns:1fr}}
+.paneel{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px 20px}
+.paneel h2{margin:0 0 4px;font-size:18px}
+.paneel .sub{color:var(--muted);font-size:13px;margin:0 0 12px;line-height:1.45}
+label.t{display:block;font-weight:700;margin:14px 0 5px}
+input[type=text],select,textarea{font:inherit;width:100%;border:1px solid var(--line);border-radius:9px;padding:8px 10px;background:#fff;color:var(--ink)}
+textarea{min-height:70px;resize:vertical}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font:inherit;font-size:13px;border:1px solid var(--line);background:#fff;border-radius:20px;padding:5px 11px;cursor:pointer;color:var(--ink)}
+.chip.on{background:var(--ink);border-color:var(--ink);color:#fff}
+.vink{display:flex;gap:8px;align-items:flex-start;margin-top:12px;font-size:14px;cursor:pointer}
+.vink input{width:17px;height:17px;margin-top:2px;accent-color:var(--accent)}
+pre{white-space:pre-wrap;word-wrap:break-word;background:var(--chip);border-radius:10px;padding:14px;font:inherit;font-size:14px;line-height:1.55;margin:0 0 12px;min-height:200px}
+.acties{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.ok{color:var(--ok);font-weight:700;font-size:13px}
+.let{font-size:12.5px;color:var(--muted);margin-top:10px;line-height:1.45}
 </style>
 </head>
 <body>
 <div class="balk" role="tablist" aria-label="Rapportages">
   <h1>Rapportages</h1>
-  <button class="sub on" role="tab" data-vlak="checklist">Checklist en terugkoppeling start</button>
-  <button class="sub" role="tab" data-vlak="verslag">Sessieverslag</button>
-  <button class="sub" role="tab" data-vlak="afronding">Terugkoppeling afronding</button>
+  <button class="hoofdtab on" role="tab" data-vlak="start">Terugkoppeling start</button>
+  <button class="hoofdtab" role="tab" data-vlak="verslag">Sessieverslag</button>
+  <button class="hoofdtab" role="tab" data-vlak="afronding">Terugkoppeling afronding</button>
+  <button class="hoofdtab" role="tab" data-vlak="verwijzing">Verwijzing en advies</button>
 </div>
 
-<div class="vlak" id="v-checklist">
-  <div class="uitleg" id="geenChecklist" hidden>
+<div class="vlak" id="v-start">
+  <div class="midden">
     <div class="kaart">
-      <h2>Checklist nog niet gekoppeld</h2>
-      <p>Hier komt je checklist Differentiaaldiagnostiek, met de terugkoppeling aan de bedrijfsarts en het adresboek. Het bestand staat alleen op je eigen computer en niet op GitHub, omdat er namen en het logo van de praktijk in staan.</p>
-      <button class="knop" onclick="post('kies-checklist')">Kies het bestand</button>
+      <h2>Terugkoppeling start</h2>
+      <p>De terugkoppeling aan de bedrijfsarts maak je in je checklist differentiaaldiagnostiek. Die staat in het tabblad DSM, zodat de classificatie en de brief bij elkaar blijven.</p>
+      <ul>
+        <li>Vink in de checklist de klachten aan en bereken de classificatie.</li>
+        <li>Ga in de checklist naar "Terugkoppeling mailen" voor het concept, het Word-bestand en de mail.</li>
+        <li>Vraag eerst het akkoord van de cliënt en vink dat af in je aanmeldpaneel.</li>
+      </ul>
+      <button class="knop primair" onclick="post('checklist')">Open de checklist</button>
     </div>
   </div>
 </div>
@@ -45,7 +70,7 @@ button.knop{font:inherit;min-height:44px;padding:0 18px;border-radius:10px;borde
 <div class="vlak" id="v-verslag" hidden></div>
 
 <div class="vlak" id="v-afronding" hidden>
-  <div class="uitleg">
+  <div class="midden">
     <div class="kaart">
       <h2>Terugkoppeling afronding volgt</h2>
       <p>Dit onderdeel maakt de brief aan de bedrijfsarts aan het einde van het traject, met de behandeldoelen uit de start. Stuur Claude een voorbeeld van zo'n brief (zonder cliëntgegevens), dan wordt het hier gebouwd.</p>
@@ -53,34 +78,137 @@ button.knop{font:inherit;min-height:44px;padding:0 18px;border-radius:10px;borde
   </div>
 </div>
 
+<div class="vlak" id="v-verwijzing" hidden>
+  <div class="vw">
+    <div class="paneel">
+      <h2>Verwijzing en advies</h2>
+      <p class="sub">Voor een verwijzing of advies aan de huisarts, bedrijfsarts of een andere zorgaanbieder, bijvoorbeeld als de checklist signalen buiten het behandelaanbod laat zien. Er wordt niets opgeslagen.</p>
+
+      <label class="t" for="soort">Soort</label>
+      <select id="soort">
+        <option value="verwijzing">Verwijzing (cliënt gaat naar een andere zorgaanbieder)</option>
+        <option value="advies">Advies (behandeling hier, met een advies aan de ontvanger)</option>
+        <option value="consult">Overleg of consultatievraag</option>
+      </select>
+
+      <label class="t" for="aan">Aan</label>
+      <select id="aan">
+        <option>Huisarts</option>
+        <option>Bedrijfsarts</option>
+        <option>Specialistische GGZ</option>
+        <option>Verslavingszorg</option>
+        <option>POH-GGZ</option>
+        <option>Anders</option>
+      </select>
+
+      <label class="t">Reden</label>
+      <div class="chips" id="redenen"></div>
+      <input type="text" id="redenAnders" placeholder="Andere reden (optioneel)" style="margin-top:8px">
+
+      <label class="t" for="bevinding">Bevindingen in het kort</label>
+      <textarea id="bevinding" placeholder="Klachten, duur, ernst, functioneren. Steekwoorden zijn genoeg."></textarea>
+
+      <label class="t" for="classificatie">Classificatie of werkhypothese (optioneel)</label>
+      <input type="text" id="classificatie" placeholder="bijv. depressieve stoornis, matig">
+
+      <label class="t" for="advies">Vraag of advies</label>
+      <textarea id="advies" placeholder="Wat vraag of adviseer je, en wat gebeurt er in de tussentijd?"></textarea>
+
+      <label class="vink"><input type="checkbox" id="akkoord"> Besproken met de cliënt, die akkoord is met deze verwijzing of dit advies</label>
+      <label class="vink"><input type="checkbox" id="spoed"> Met spoed (bijv. bij risico of veiligheidszorgen)</label>
+    </div>
+
+    <div class="paneel">
+      <h2>Tekst</h2>
+      <p class="sub">Controleer en vul aan. Zet geen cliëntnaam in een onderwerpregel.</p>
+      <pre id="uit"></pre>
+      <div class="acties">
+        <button class="knop primair" onclick="kopieer()">Kopieer</button>
+        <button class="knop" id="leeg" onclick="leegmaken()">Leegmaken</button>
+        <span class="ok" id="ok"></span>
+      </div>
+      <p class="let">Bij acuut gevaar of suïcidaliteit met een concreet plan: bel direct met de huisarts of de crisisdienst. Een brief is dan niet genoeg.</p>
+    </div>
+  </div>
+</div>
+
 <script>
 function post(m){ if(window.chrome && chrome.webview) chrome.webview.postMessage(m); }
+const $=id=>document.getElementById(id);
 const geladen={};
-function laadChecklist(){
-  fetch('eigen/checklist.html',{method:'HEAD',cache:'no-store'}).then(r=>{
-    if(!r.ok) throw 0;
-    document.getElementById('geenChecklist').hidden=true;
-    const oud=document.querySelector('#v-checklist iframe'); if(oud) oud.remove();
-    const f=document.createElement('iframe'); f.src='eigen/checklist.html?t='+Date.now(); f.title='Checklist en terugkoppeling';
-    document.getElementById('v-checklist').appendChild(f);
-  }).catch(()=>{ document.getElementById('geenChecklist').hidden=false; });
-}
 function toon(naam){
-  document.querySelectorAll('.sub').forEach(b=>b.classList.toggle('on',b.dataset.vlak===naam));
+  document.querySelectorAll('.hoofdtab').forEach(b=>b.classList.toggle('on',b.dataset.vlak===naam));
   document.querySelectorAll('.vlak').forEach(v=>v.hidden=v.id!=='v-'+naam);
-  if(geladen[naam]) return;
-  geladen[naam]=true;
-  if(naam==='checklist') laadChecklist();
-  if(naam==='verslag'){
+  if(naam==='verslag' && !geladen.verslag){
+    geladen.verslag=true;
     const f=document.createElement('iframe'); f.src='verslag.html'; f.title='Sessieverslag';
-    document.getElementById('v-verslag').appendChild(f);
+    $('v-verslag').appendChild(f);
   }
 }
-document.querySelectorAll('.sub').forEach(b=>b.onclick=()=>toon(b.dataset.vlak));
-if(window.chrome && chrome.webview){
-  chrome.webview.addEventListener('message',ev=>{ if(ev.data==='checklist-ok') laadChecklist(); });
+document.querySelectorAll('.hoofdtab').forEach(b=>b.onclick=()=>toon(b.dataset.vlak));
+
+// ---------- verwijzing en advies ----------
+const REDENEN=[
+  ['buiten','de hulpvraag valt buiten het behandelaanbod van de basis-GGZ'],
+  ['ernst','de ernst of complexiteit vraagt meer dan de basis-GGZ kan bieden'],
+  ['risico','er zijn zorgen over de veiligheid (suïcidaliteit of risico)'],
+  ['somatisch','lichamelijke oorzaken moeten (nog) worden uitgesloten'],
+  ['medicatie','overleg over medicatie is gewenst'],
+  ['middelen','middelengebruik lijkt de klachten mede te verklaren of in stand te houden'],
+  ['psychose','er zijn aanwijzingen voor psychotische kenmerken'],
+  ['persoonlijkheid','er zijn aanwijzingen voor persoonlijkheidsproblematiek'],
+  ['eten','er zijn aanwijzingen voor een eetstoornis'],
+  ['ontwikkeling','diagnostiek naar ADHD of autisme is gewenst'],
+  ['werk','het werk of de re-integratie vraagt afstemming'],
+  ['geen_klachten','er is geen psychische stoornis die behandeling in de GGZ rechtvaardigt']
+];
+const LABEL={buiten:'Buiten aanbod',ernst:'Ernst of complexiteit',risico:'Risico of veiligheid',somatisch:'Somatiek uitsluiten',medicatie:'Medicatie',middelen:'Middelengebruik',psychose:'Psychotische kenmerken',persoonlijkheid:'Persoonlijkheid',eten:'Eetproblematiek',ontwikkeling:'ADHD of autisme',werk:'Werk en re-integratie',geen_klachten:'Geen GGZ-indicatie'};
+const gekozen=new Set();
+$('redenen').innerHTML=REDENEN.map(([k])=>'<button type="button" class="chip" data-k="'+k+'">'+LABEL[k]+'</button>').join('');
+document.querySelectorAll('#redenen .chip').forEach(b=>b.onclick=()=>{ const k=b.dataset.k; gekozen.has(k)?gekozen.delete(k):gekozen.add(k); b.classList.toggle('on'); maak(); });
+
+const zin=t=>{ t=String(t||'').trim().replace(/\s*\n+\s*/g,' '); if(!t) return ''; t=t[0].toUpperCase()+t.slice(1); return /[.!?]$/.test(t)?t:t+'.'; };
+function opsomming(lijst){ if(lijst.length<2) return lijst.join(''); return lijst.slice(0,-1).join(', ')+' en '+lijst[lijst.length-1]; }
+function maak(){
+  const soort=$('soort').value, aan=$('aan').value;
+  const aanhef=aan==='Anders'?'Geachte collega,':(aan==='Specialistische GGZ'||aan==='Verslavingszorg'?'Geachte collega,':'Geachte '+aan.toLowerCase()+',');
+  const r=[];
+  if($('spoed').checked) r.push('MET SPOED','');
+  r.push(aanhef,'');
+  const kop={verwijzing:'Graag verwijs ik onderstaande cliënt naar u door.',advies:'Graag informeer ik u over onderstaande cliënt en geef ik een advies mee.',consult:'Graag overleg ik met u over onderstaande cliënt.'}[soort];
+  r.push(kop,'');
+  const redenen=REDENEN.filter(([k])=>gekozen.has(k)).map(([,t])=>t);
+  const anders=$('redenAnders').value.trim();
+  if(anders) redenen.push(anders.replace(/[.]$/,''));
+  if(redenen.length) r.push('Reden: '+zin(opsomming(redenen)),'');
+  const bev=zin($('bevinding').value);
+  if(bev) r.push('Bevindingen: '+bev,'');
+  const cl=$('classificatie').value.trim();
+  if(cl) r.push('Classificatie / werkhypothese: '+cl.replace(/[.]$/,'')+'.','');
+  const adv=zin($('advies').value);
+  if(adv) r.push((soort==='consult'?'Vraag: ':soort==='advies'?'Advies: ':'Verzoek: ')+adv,'');
+  if($('akkoord').checked) r.push('De cliënt is op de hoogte en akkoord met deze '+(soort==='verwijzing'?'verwijzing':soort==='advies'?'terugkoppeling':'vraag')+'.','');
+  r.push('Voor vragen kunt u contact met mij opnemen.','','Met vriendelijke groet,','');
+  $('uit').textContent=r.join('\n').replace(/\n{3,}/g,'\n\n');
+  $('ok').textContent='';
 }
-toon('checklist');
+document.querySelectorAll('#v-verwijzing input,#v-verwijzing select,#v-verwijzing textarea').forEach(el=>el.addEventListener('input',maak));
+document.querySelectorAll('#v-verwijzing input[type=checkbox]').forEach(el=>el.addEventListener('change',maak));
+function kopieer(){
+  navigator.clipboard.writeText($('uit').textContent).then(()=>{ $('ok').textContent='Gekopieerd'; },()=>{ $('ok').textContent='Kopiëren lukte niet'; });
+}
+let leegTimer=null;
+function leegmaken(){
+  const b=$('leeg');
+  if(!leegTimer){ b.textContent='Zeker weten?'; leegTimer=setTimeout(()=>{ b.textContent='Leegmaken'; leegTimer=null; },3000); return; }
+  clearTimeout(leegTimer); leegTimer=null; b.textContent='Leegmaken';
+  ['redenAnders','bevinding','classificatie','advies'].forEach(id=>$(id).value='');
+  $('akkoord').checked=false; $('spoed').checked=false; gekozen.clear();
+  document.querySelectorAll('#redenen .chip').forEach(c=>c.classList.remove('on'));
+  maak();
+}
+maak();
+toon('start');
 </script>
 </body>
 </html>

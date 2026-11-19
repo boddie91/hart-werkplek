@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<title>DSM – Hart Werkplek</title>
+<style>
+html,body{height:100%}
+body{margin:0;background:#eef0f4;color:#1d2433;font-family:"Segoe UI",system-ui,sans-serif;font-size:14.5px;display:flex;flex-direction:column}
+.balk{display:flex;align-items:flex-end;gap:4px;padding:14px 22px 0;background:#fff;border-bottom:1px solid #dde1ea;flex:0 0 auto}
+.balk h1{font-size:19px;margin:0 22px 10px 0}
+.hoofdtab{font:inherit;font-size:15px;border:none;background:none;padding:10px 14px;color:#5d6678;border-bottom:2px solid transparent;cursor:pointer;margin-bottom:-1px}
+.hoofdtab:hover{color:#1d2433}
+.hoofdtab.on{color:#b23a5b;border-bottom-color:#b23a5b;font-weight:700}
+.vlak{flex:1;min-height:0;position:relative}
+#v-naslag{overflow:auto}
+#v-checklist iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff}
+.uitleg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:24px}
+.kaart{max-width:560px;background:#fff;border:1px solid #dde1ea;border-radius:14px;padding:26px 28px;line-height:1.55}
+.kaart h2{margin:0 0 8px;font-size:20px}
+.kaart p{margin:0 0 12px;color:#5d6678}
+button.knop{font:inherit;min-height:44px;padding:0 18px;border-radius:10px;border:none;background:#b23a5b;color:#fff;font-weight:700;cursor:pointer}
+
+/* ---- thema voor het DSM-5 dashboard ---- */
+#dash-root{
+  max-width:1280px;margin:0 auto;padding:22px 26px 40px;
+  --font-anthropic-sans:"Segoe UI",system-ui,sans-serif;
+  --font-anthropic-serif:Georgia,"Times New Roman",serif;
+  --color-fg:#1d2433;--color-fg-muted:#5d6678;--color-bg:#f6f7fa;--color-panel:#fff;--color-border-line:#dde1ea;
+  --color-ok:#2f7a55;--color-warn:#b8860b;--color-bad:#c2410c;
+  --cds-gap-xs:4px;--cds-gap-sm:8px;--cds-gap-md:14px;--cds-gap-lg:20px;--cds-gap-xl:32px;
+  --cds-pad-xs:4px;--cds-pad-sm:8px;--cds-pad-md:12px;--cds-pad-lg:18px;--cds-pad-xl:28px;
+  --cds-radius:8px;
+  --cds-font-size-caption:12.5px;--cds-font-size-body:14.5px;--cds-font-size-heading:16px;--cds-font-size-title:24px;--cds-font-weight-medium:600;
+  --cds-dur-slow:.2s;--cds-ease-out:cubic-bezier(.2,.8,.2,1);
+  --cds-shadow-popover:0 6px 20px rgba(29,36,51,.12);--cds-surface-popover:#fff;--cds-border:#dde1ea;--cds-text-secondary:#5d6678;
+  --cds-chart-muted:#c3c9d4;--cds-chart-axis:#c3c9d4;
+}
+#dash-root [hidden]{display:none!important}
+#dash-root .dash-select{font:inherit;padding:8px 10px;border:1px solid var(--color-border-line);border-radius:8px;background:#fff;color:var(--color-fg)}
+
+#dash-root .ds { font-family: var(--font-anthropic-sans); color: var(--color-fg); --acc: var(--lg-0); }
+#dash-root .ds * { box-sizing: border-box; }
+#dash-root .ds .hero { display: grid; gap: var(--cds-gap-md); grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); align-items: end; margin-bottom: var(--cds-gap-lg); padding: var(--cds-pad-xl) var(--cds-pad-lg); border-radius: calc(var(--cds-radius) * 2); background: linear-gradient(135deg, color-mix(in srgb, var(--lg-0) 16%, var(--color-panel)), color-mix(in srgb, var(--lg-1) 12%, var(--color-panel))); border: 1px solid var(--color-border-line); }
+#dash-root .ds .eyebrow { font-size: var(--cds-font-size-caption); text-transform: uppercase; letter-spacing: .08em; color: var(--color-fg-muted); margin: 0 0 var(--cds-gap-xs); }
+#dash-root .ds h1 { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: calc(var(--cds-font-size-title) * 1.35); line-height: 1.1; margin: 0 0 var(--cds-gap-sm); }
+#dash-root .ds .lede { color: var(--color-fg-muted); margin: 0; line-height: 1.5; }
+#dash-root .ds .lede b { font-weight: 500; color: var(--color-fg); font-variant-numeric: tabular-nums; }
+#dash-root .ds .herostats { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--cds-gap-sm); }
+#dash-root .ds .hs { background: var(--color-bg); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-sm) var(--cds-pad-md); }
+#dash-root .ds .hs .v { display: block; font-family: var(--font-anthropic-serif); font-size: var(--cds-font-size-title); font-variant-numeric: tabular-nums; }
+#dash-root .ds .hs .l { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+#dash-root .ds .nav { position: sticky; top: 0; z-index: 5; display: flex; gap: 4px; padding: 4px; margin-bottom: var(--cds-gap-lg); background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: 999px; overflow-x: auto; scrollbar-width: none; }
+#dash-root .ds .tab { font: inherit; flex: 1 0 auto; background: none; border: 0; border-radius: 999px; padding: var(--cds-pad-sm) var(--cds-pad-md); color: var(--color-fg-muted); cursor: pointer; white-space: nowrap; transition: background var(--cds-dur-slow), color var(--cds-dur-slow); }
+#dash-root .ds .tab:hover { color: var(--color-fg); }
+#dash-root .ds .tab[aria-selected="true"] { background: var(--color-fg); color: var(--color-bg); font-weight: var(--cds-font-weight-medium); }
+#dash-root .ds .card { background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: calc(var(--cds-radius) * 1.5); padding: var(--cds-pad-lg); min-width: 0; }
+#dash-root .ds .card h2 { font-size: var(--cds-font-size-heading); font-weight: var(--cds-font-weight-medium); margin: 0 0 var(--cds-gap-xs); }
+#dash-root .ds .note { color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); margin: 0 0 var(--cds-gap-md); line-height: 1.45; }
+#dash-root .ds .stack { display: grid; gap: var(--cds-gap-md); }
+#dash-root .ds .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+#dash-root .ds .chip { font: inherit; font-size: var(--cds-font-size-caption); border: 1px solid var(--color-border-line); background: var(--color-bg); color: var(--color-fg); border-radius: 999px; padding: 4px 12px; cursor: pointer; transition: all var(--cds-dur-slow); }
+#dash-root .ds .chip:hover { border-color: var(--color-fg-muted); }
+#dash-root .ds .chip[aria-pressed="true"] { background: var(--acc); border-color: var(--acc); color: #fff; }
+#dash-root .ds .linkbtn { font: inherit; font-size: var(--cds-font-size-caption); background: none; border: 0; color: var(--color-fg-muted); text-decoration: underline; cursor: pointer; padding: 0; }
+#dash-root .ds .row { display: flex; flex-wrap: wrap; gap: var(--cds-gap-sm); align-items: center; justify-content: space-between; margin-bottom: var(--cds-gap-sm); }
+#dash-root .ds input.search { font: inherit; width: 100%; padding: var(--cds-pad-sm) var(--cds-pad-md); border: 1px solid var(--color-border-line); border-radius: 999px; background: var(--color-bg); color: var(--color-fg); }
+#dash-root .ds .split { display: grid; gap: var(--cds-gap-md); grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 760px) { #dash-root .ds .split { grid-template-columns: minmax(15rem, 20rem) minmax(0, 1fr); } }
+#dash-root .ds .list { display: grid; gap: 6px; align-content: start; max-height: 40rem; overflow: auto; padding-right: 2px; }
+#dash-root .ds .item { font: inherit; text-align: left; width: 100%; background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-sm) var(--cds-pad-md); color: var(--color-fg); cursor: pointer; display: grid; grid-template-columns: 4px 1fr auto; gap: var(--cds-gap-sm); align-items: center; transition: border-color var(--cds-dur-slow), transform var(--cds-dur-slow); }
+#dash-root .ds .item:hover { border-color: var(--color-fg-muted); }
+#dash-root .ds .item[aria-current="true"] { border-color: var(--acc); box-shadow: 0 0 0 1px var(--acc) inset; }
+#dash-root .ds .item.dim { opacity: .45; }
+#dash-root .ds .item .bar { width: 4px; align-self: stretch; border-radius: 2px; }
+#dash-root .ds .item .nm { font-weight: var(--cds-font-weight-medium); display: block; }
+#dash-root .ds .item .sub { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+#dash-root .ds .badge { font-size: var(--cds-font-size-caption); border-radius: 999px; padding: 1px 8px; background: var(--color-bg); border: 1px solid var(--color-border-line); font-variant-numeric: tabular-nums; white-space: nowrap; }
+#dash-root .ds .badge.hot { background: var(--acc); color: #fff; border-color: var(--acc); }
+#dash-root .ds .detail { min-height: 30rem; }
+#dash-root .ds .dhead { display: flex; flex-wrap: wrap; gap: var(--cds-gap-sm) var(--cds-gap-md); align-items: flex-start; justify-content: space-between; padding-bottom: var(--cds-pad-md); border-bottom: 1px solid var(--color-border-line); margin-bottom: var(--cds-pad-md); }
+#dash-root .ds .dhead h2 { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: var(--cds-font-size-title); margin: 0; }
+#dash-root .ds .dhead .sub { color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); margin-top: 2px; }
+#dash-root .ds .ring { display: flex; align-items: center; gap: var(--cds-gap-sm); font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); max-width: 14rem; }
+#dash-root .ds .ring b { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: var(--cds-font-size-title); color: var(--color-fg); display: block; line-height: 1; font-variant-numeric: tabular-nums; }
+#dash-root .ds .dtabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: var(--cds-gap-md); }
+#dash-root .ds .dpanel p { margin: 0 0 var(--cds-gap-sm); line-height: 1.6; }
+#dash-root .ds .dpanel ul { margin: 0; padding-left: 0; list-style: none; display: grid; gap: 6px; }
+#dash-root .ds .dpanel li { background: var(--color-bg); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-sm) var(--cds-pad-md); line-height: 1.45; }
+#dash-root .ds .kv { display: grid; gap: var(--cds-gap-md); grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr)); }
+#dash-root .ds .kv h3 { font-size: var(--cds-font-size-caption); text-transform: uppercase; letter-spacing: .05em; color: var(--color-fg-muted); margin: 0 0 4px; font-weight: var(--cds-font-weight-medium); }
+#dash-root .ds .tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: var(--cds-gap-sm); }
+#dash-root .ds .tag { font-size: var(--cds-font-size-caption); padding: 1px 8px; border-radius: 999px; background: var(--color-bg); border: 1px solid var(--color-border-line); color: var(--color-fg-muted); }
+#dash-root .ds .tag.on { border-color: var(--acc); color: var(--color-fg); }
+#dash-root .ds .cta { font: inherit; font-size: var(--cds-font-size-caption); background: var(--color-fg); color: var(--color-bg); border: 0; border-radius: 999px; padding: 6px 14px; cursor: pointer; }
+#dash-root .ds .cta.ghost { background: none; color: var(--color-fg); border: 1px solid var(--color-border-line); }
+#dash-root .ds .hgrid { display: grid; gap: var(--cds-gap-sm); grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr)); }
+#dash-root .ds details.hc { background: var(--color-panel); border: 1px solid var(--color-border-line); border-left: 4px solid var(--rel-c, var(--cds-chart-muted)); border-radius: var(--cds-radius); transition: box-shadow var(--cds-dur-slow); }
+#dash-root .ds details.hc:hover { box-shadow: var(--cds-shadow-popover); }
+#dash-root .ds details.hc > summary { list-style: none; cursor: pointer; padding: var(--cds-pad-md); display: grid; grid-template-columns: auto 1fr; gap: 2px var(--cds-gap-sm); }
+#dash-root .ds details.hc > summary::-webkit-details-marker { display: none; }
+#dash-root .ds .hc .nr { font-family: var(--font-anthropic-serif); font-size: var(--cds-font-size-title); color: var(--color-fg-muted); line-height: 1; grid-row: span 2; min-width: 2ch; font-variant-numeric: tabular-nums; }
+#dash-root .ds .hc .ti { font-weight: var(--cds-font-weight-medium); line-height: 1.3; }
+#dash-root .ds .hc .rl { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+#dash-root .ds .hc .hb { padding: 0 var(--cds-pad-md) var(--cds-pad-md); font-size: var(--cds-font-size-body); line-height: 1.5; }
+#dash-root .ds .hc .hb p { margin: 0 0 6px; }
+#dash-root .ds .legend { display: flex; flex-wrap: wrap; gap: var(--cds-gap-sm) var(--cds-gap-md); font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+#dash-root .ds .legend i { display: inline-block; width: .65rem; height: .65rem; border-radius: 3px; margin-right: .35rem; vertical-align: -1px; }
+#dash-root .ds .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr)); gap: var(--cds-gap-sm); }
+#dash-root .ds .tile { border-top: 3px solid var(--tc, var(--color-border-line)); }
+#dash-root .ds .tile .lbl { color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); }
+#dash-root .ds .tile .big { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: var(--cds-font-size-title); font-variant-numeric: tabular-nums; display: block; margin-top: var(--cds-gap-xs); }
+#dash-root .ds .seg { display: inline-flex; padding: 3px; gap: 2px; background: var(--color-bg); border: 1px solid var(--color-border-line); border-radius: 999px; }
+#dash-root .ds .seg button { font: inherit; font-size: var(--cds-font-size-caption); background: none; border: 0; border-radius: 999px; padding: 4px 12px; color: var(--color-fg-muted); cursor: pointer; }
+#dash-root .ds .seg button[aria-pressed="true"] { background: var(--color-panel); color: var(--color-fg); font-weight: var(--cds-font-weight-medium); box-shadow: 0 1px 2px rgba(0,0,0,.12); }
+#dash-root .ds .prevwrap { display: grid; gap: var(--cds-gap-md); grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 860px) { #dash-root .ds .prevwrap { grid-template-columns: minmax(0, 1fr) 17rem; } }
+#dash-root .ds .side { background: var(--color-bg); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-md); align-self: start; min-height: 16rem; }
+#dash-root .ds .side h3 { margin: 0 0 2px; font-size: var(--cds-font-size-heading); font-weight: var(--cds-font-weight-medium); }
+#dash-root .ds .side .sv { font-family: var(--font-anthropic-serif); font-size: calc(var(--cds-font-size-title) * 1.2); display: block; margin: var(--cds-gap-sm) 0; font-variant-numeric: tabular-nums; }
+#dash-root .ds .mini { display: grid; grid-template-columns: 4.5rem 1fr 3rem; gap: 6px; align-items: center; font-size: var(--cds-font-size-caption); margin-bottom: 6px; }
+#dash-root .ds .mini .track { height: 8px; background: var(--color-panel); border-radius: 4px; overflow: hidden; }
+#dash-root .ds .mini .fill { height: 100%; border-radius: 4px; }
+#dash-root .ds .mini .n { text-align: right; font-variant-numeric: tabular-nums; }
+#dash-root .ds .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr)); gap: var(--cds-gap-md); }
+#dash-root .ds .chart { position: relative; min-height: 14rem; }
+#dash-root .ds .chart svg text { font-family: var(--font-anthropic-sans); font-size: var(--cds-font-size-caption); fill: var(--color-fg-muted); }
+#dash-root .ds .chart svg text.val { fill: var(--color-fg); font-variant-numeric: tabular-nums; }
+#dash-root .ds .chart svg .hit { cursor: pointer; }
+#dash-root .ds .chart svg g.r.sel text.lab { fill: var(--color-fg); font-weight: 500; }
+#dash-root .ds .tip { position: absolute; pointer-events: none; background: var(--cds-surface-popover); border: 1px solid var(--cds-border); border-radius: var(--cds-radius); box-shadow: var(--cds-shadow-popover); padding: var(--cds-pad-xs) var(--cds-pad-sm); font-size: var(--cds-font-size-caption); white-space: nowrap; z-index: 3; }
+#dash-root .ds .tip .t { color: var(--cds-text-secondary); }
+#dash-root .ds .builder { display: grid; gap: var(--cds-gap-md); grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 860px) { #dash-root .ds .builder { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); } }
+#dash-root .ds .checks { display: grid; gap: 6px; }
+#dash-root .ds .ck { display: grid; grid-template-columns: auto 1fr; gap: var(--cds-gap-sm); align-items: start; background: var(--color-bg); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-sm) var(--cds-pad-md); cursor: pointer; line-height: 1.45; }
+#dash-root .ds .ck:has(input:checked) { border-color: var(--acc); }
+#dash-root .ds .ck input { margin-top: 3px; accent-color: var(--acc); }
+#dash-root .ds textarea.out { width: 100%; min-height: 16rem; font: inherit; font-size: var(--cds-font-size-body); line-height: 1.55; padding: var(--cds-pad-md); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); background: var(--color-bg); color: var(--color-fg); resize: vertical; }
+#dash-root .ds .sel-wide { width: 100%; }
+#dash-root .ds .ok { color: var(--color-ok); font-size: var(--cds-font-size-caption); }
+#dash-root .ds .info { display: grid; gap: var(--cds-gap-sm); margin-top: var(--cds-gap-md); font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); line-height: 1.5; }
+#dash-root .ds .info b { color: var(--color-fg); font-weight: 500; }
+#dash-root .ds .daynav { display: grid; grid-template-columns: auto 1fr auto; gap: var(--cds-gap-sm); align-items: center; }
+#dash-root .ds .daylbl { text-align: center; }
+#dash-root .ds .daylbl strong { display: block; font-family: var(--font-anthropic-serif); font-weight: 400; font-size: var(--cds-font-size-title); line-height: 1.15; }
+#dash-root .ds .daylbl .eyebrow { margin: 0; }
+#dash-root .ds .tipcard { position: relative; overflow: hidden; background: linear-gradient(120deg, color-mix(in srgb, var(--lg-2) 14%, var(--color-panel)), var(--color-panel) 70%); }
+#dash-root .ds .tipcard .tiptxt { font-family: var(--font-anthropic-serif); font-size: calc(var(--cds-font-size-heading) * 1.25); line-height: 1.45; margin: var(--cds-gap-xs) 0 0; max-width: 52rem; }
+#dash-root .ds .tipcard::after { content: "“"; position: absolute; right: var(--cds-pad-lg); top: -0.15em; font-family: var(--font-anthropic-serif); font-size: 7rem; line-height: 1; color: var(--color-fg); opacity: .07; pointer-events: none; }
+#dash-root .ds .daygrid { display: grid; gap: var(--cds-gap-md); grid-template-columns: minmax(0, 1fr); align-items: start; }
+@media (min-width: 900px) { #dash-root .ds .daygrid { grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); } }
+#dash-root .ds .dots { display: flex; gap: 6px; margin-bottom: var(--cds-gap-sm); }
+#dash-root .ds .dot { width: 100%; height: 5px; border-radius: 3px; background: var(--color-border-line); transition: background var(--cds-dur-slow); }
+#dash-root .ds .dot.cur { background: var(--color-fg-muted); }
+#dash-root .ds .dot.yes { background: var(--color-ok); }
+#dash-root .ds .dot.no { background: var(--color-warn); }
+#dash-root .ds .flip { perspective: 1200px; cursor: pointer; height: 15rem; margin-bottom: var(--cds-gap-sm); outline: none; }
+#dash-root .ds .flip:focus-visible .face { box-shadow: 0 0 0 2px var(--lg-0); }
+#dash-root .ds .flip .inner { position: relative; width: 100%; height: 100%; transition: transform .55s var(--cds-ease-out); transform-style: preserve-3d; }
+#dash-root .ds .flip.on .inner { transform: rotateY(180deg); }
+#dash-root .ds .face { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; border: 1px solid var(--color-border-line); border-radius: calc(var(--cds-radius) * 1.5); padding: var(--cds-pad-lg); display: flex; flex-direction: column; justify-content: center; gap: var(--cds-gap-sm); background: var(--color-bg); overflow: auto; }
+#dash-root .ds .face.back { transform: rotateY(180deg); background: color-mix(in srgb, var(--lg-0) 10%, var(--color-bg)); border-color: color-mix(in srgb, var(--lg-0) 45%, var(--color-border-line)); }
+#dash-root .ds .face .k { font-size: var(--cds-font-size-caption); text-transform: uppercase; letter-spacing: .07em; color: var(--color-fg-muted); }
+#dash-root .ds .face p { margin: 0; font-size: var(--cds-font-size-heading); line-height: 1.45; }
+#dash-root .ds .face .hint { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); margin-top: auto; }
+#dash-root .ds .fcbtns { display: grid; grid-template-columns: auto 1fr 1fr auto; gap: 6px; }
+#dash-root .ds .fcbtns button:disabled { opacity: .4; cursor: default; }
+#dash-root .ds .cta.yes { background: var(--color-ok); color: #fff; }
+#dash-root .ds .cta.no { background: none; color: var(--color-fg); border: 1px solid var(--color-warn); }
+#dash-root .ds .score { text-align: center; padding: var(--cds-pad-lg) 0; }
+#dash-root .ds .score .big { font-family: var(--font-anthropic-serif); font-size: calc(var(--cds-font-size-title) * 1.6); display: block; font-variant-numeric: tabular-nums; }
+#dash-root .ds .casehead { font-weight: var(--cds-font-weight-medium); margin: 0 0 4px; }
+#dash-root .ds .casetxt { line-height: 1.6; margin: 0 0 var(--cds-gap-md); padding: var(--cds-pad-md); background: var(--color-bg); border-left: 3px solid var(--lg-4, var(--lg-0)); border-radius: 0 var(--cds-radius) var(--cds-radius) 0; }
+#dash-root .ds .opts { display: grid; gap: 6px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr)); margin-bottom: var(--cds-gap-md); }
+#dash-root .ds .opt { font: inherit; text-align: left; padding: var(--cds-pad-sm) var(--cds-pad-md); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); background: var(--color-panel); color: var(--color-fg); cursor: pointer; transition: all var(--cds-dur-slow); }
+#dash-root .ds .opt:hover:not(:disabled) { border-color: var(--color-fg-muted); transform: translateY(-1px); }
+#dash-root .ds .opt:disabled { cursor: default; }
+#dash-root .ds .opt.right { border-color: var(--color-ok); background: color-mix(in srgb, var(--color-ok) 14%, var(--color-panel)); font-weight: 500; }
+#dash-root .ds .opt.wrong { border-color: var(--color-bad); background: color-mix(in srgb, var(--color-bad) 10%, var(--color-panel)); }
+#dash-root .ds .opt.faded { opacity: .5; }
+#dash-root .ds .fb { display: grid; gap: var(--cds-gap-sm); }
+#dash-root .ds .fb .verdict { font-weight: var(--cds-font-weight-medium); font-size: var(--cds-font-size-heading); }
+#dash-root .ds .fb .verdict.okc { color: var(--color-ok); }
+#dash-root .ds .fb .verdict.badc { color: var(--color-bad); }
+#dash-root .ds .fb p { margin: 0; line-height: 1.55; }
+#dash-root .ds .fb .box { background: var(--color-bg); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-sm) var(--cds-pad-md); }
+#dash-root .ds .fb .box h3 { font-size: var(--cds-font-size-caption); text-transform: uppercase; letter-spacing: .05em; color: var(--color-fg-muted); margin: 0 0 4px; font-weight: 500; }
+@media (prefers-reduced-motion: reduce) { #dash-root .ds .flip .inner { transition: none; } }
+#dash-root .ds .muted { color: var(--color-fg-muted); }
+#dash-root .ds .fail { display: flex; align-items: center; justify-content: center; gap: .4rem; min-height: inherit; color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); }
+#dash-root .ds .foot { margin-top: var(--cds-gap-xl); color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); }
+#dash-root .ds .foot summary { cursor: pointer; }
+#dash-root .ds .foot p { margin: var(--cds-gap-xs) 0; line-height: 1.5; }
+@media (prefers-reduced-motion: no-preference) {
+  #dash-root .ds section:not([hidden]) { animation: ds-in var(--cds-dur-slow) var(--cds-ease-out); }
+  @keyframes ds-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+}
+</style>
+</head>
+<body>
+<div class="balk" role="tablist" aria-label="DSM">
+  <h1>DSM</h1>
+  <button class="hoofdtab on" role="tab" data-vlak="naslag">Naslag en oefenen</button>
+  <button class="hoofdtab" role="tab" data-vlak="checklist">Checklist differentiaaldiagnostiek</button>
+</div>
+
+<div class="vlak" id="v-naslag">
+<div id="dash-root">
+<div class="ds">
+  <header class="hero">
+    <div>
+      <p class="eyebrow">Basis-GGZ · naslag</p>
+      <h1>DSM-5 dashboard</h1>
+      <p class="lede">Elke dag een tip, flashcards en een oefencasus, plus naslag van klacht tot behandeldoel. In Nederland had <b data-draw="kpi" data-field="m12" data-where="stoornis=Enige%20psychische%20aandoening">—</b> van de volwassenen het afgelopen jaar een psychische aandoening.</p>
+    </div>
+    <div class="herostats">
+      <div class="hs"><span class="v" data-draw="kpi" data-field="m12" data-where="stoornis=Enige%20angststoornis">—</span><span class="l">angststoornis</span></div>
+      <div class="hs"><span class="v" data-draw="kpi" data-field="m12" data-where="stoornis=Enige%20stemmingsstoornis">—</span><span class="l">stemmingsstoornis</span></div>
+      <div class="hs"><span class="v" data-draw="kpi" data-field="m12" data-where="stoornis=Enige%20middelenstoornis">—</span><span class="l">middelenstoornis</span></div>
+    </div>
+  </header>
+
+  <nav class="nav" role="tablist" aria-label="Onderdelen">
+    <button class="tab" role="tab" data-tab="vandaag" aria-selected="true">Vandaag</button>
+    <button class="tab" role="tab" data-tab="naslag" aria-selected="false">Klachten &amp; naslag</button>
+    <button class="tab" role="tab" data-tab="doelen" aria-selected="false">Doelenbouwer</button>
+    <button class="tab" role="tab" data-tab="overzicht" aria-selected="false">Hele DSM-5</button>
+    <button class="tab" role="tab" data-tab="cijfers" aria-selected="false">Cijfers</button>
+  </nav>
+
+  <section id="vandaag" data-page="vandaag" class="stack">
+    <div class="daynav">
+      <button class="cta ghost" data-day="-1" aria-label="Vorige dag">‹ Vorige</button>
+      <div class="daylbl">
+        <p class="eyebrow">Oefenen van de dag</p>
+        <strong data-draw="daylabel">—</strong>
+        <button class="linkbtn" data-day="0" hidden>Terug naar vandaag</button>
+      </div>
+      <button class="cta ghost" data-day="1" aria-label="Volgende dag">Volgende ›</button>
+    </div>
+    <div class="card tipcard">
+      <p class="eyebrow">Tip van de dag · <span data-draw="tipcat">—</span></p>
+      <p class="tiptxt" data-draw="tip">—</p>
+    </div>
+    <div class="daygrid">
+      <div class="card">
+        <h2>Vijf flashcards</h2>
+        <p class="note">Tik op de kaart (of druk op spatie) om hem om te draaien, en geef aan of je het wist.</p>
+        <div data-draw="flash"></div>
+      </div>
+      <div class="card">
+        <h2>Oefencasus</h2>
+        <p class="note">Lees de casus en kies de classificatie die het beste past. Fictieve casus.</p>
+        <div data-draw="casus"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="naslag" data-page="naslag" class="stack" hidden>
+    <div class="card">
+      <div class="row">
+        <h2>Klachtenwijzer</h2>
+        <button class="linkbtn" data-klreset>Wis selectie</button>
+      </div>
+      <p class="note">Tik de klachten aan die je in de intake hoort. De classificaties sorteren zich op hoeveel klachten overeenkomen. Een hulpmiddel om aan te denken, geen diagnose.</p>
+      <div class="chips" id="klachtchips"></div>
+    </div>
+    <div class="split">
+      <div class="stack" style="gap: var(--cds-gap-sm); align-content: start">
+        <input class="search" type="search" data-search="naslag" placeholder="Zoek stoornis of instrument…" aria-label="Zoeken in naslag">
+        <div class="list" data-draw="dislist"></div>
+      </div>
+      <div class="card detail" data-draw="disdetail"></div>
+    </div>
+  </section>
+
+  <section id="doelen" data-page="doelen" hidden>
+    <div class="builder">
+      <div class="card">
+        <h2>Kies doelen</h2>
+        <p class="note">Kies een classificatie en vink de doelen aan die passen. Rechts ontstaat een tekst die je kunt aanpassen en kopiëren naar je behandelplan in James.</p>
+        <select class="dash-select sel-wide" data-draw="doelsel" aria-label="Classificatie"></select>
+        <div style="height: var(--cds-gap-md)"></div>
+        <div class="checks" data-draw="doelcheck"></div>
+        <div class="info" data-draw="doelinfo"></div>
+      </div>
+      <div class="card">
+        <div class="row">
+          <h2>Tekst voor behandelplan</h2>
+          <span class="ok" data-copied hidden>Gekopieerd</span>
+        </div>
+        <p class="note">Maak de doelen concreet met de cliënt: vul de x'en in en noem een termijn.</p>
+        <textarea class="out" data-draw="doelout" aria-label="Tekst behandeldoelen"></textarea>
+        <div class="row" style="margin-top: var(--cds-gap-sm); justify-content: flex-start">
+          <button class="cta" data-copy>Kopieer tekst</button>
+          <button class="cta ghost" data-clearcheck>Alles uitvinken</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="overzicht" data-page="overzicht" class="stack" hidden>
+    <div class="card">
+      <h2>Alle hoofdstukken van de DSM-5</h2>
+      <p class="note">Tik op een hoofdstuk voor de belangrijkste classificaties. De kleur geeft aan hoe vaak het in de basis-GGZ thuishoort.</p>
+      <input class="search" type="search" data-search="overzicht" placeholder="Zoek een stoornis of hoofdstuk…" aria-label="Zoeken in hoofdstukken" style="margin-bottom: var(--cds-gap-sm)">
+      <div class="chips">
+        <button class="chip" data-rel="" aria-pressed="true">Alles</button>
+        <button class="chip" data-rel="Vaak basis-GGZ" aria-pressed="false">Vaak basis-GGZ</button>
+        <button class="chip" data-rel="Soms basis-GGZ" aria-pressed="false">Soms basis-GGZ</button>
+        <button class="chip" data-rel="Meestal S-GGZ / verwijzen" aria-pressed="false">Meestal verwijzen</button>
+        <button class="chip" data-rel="Buiten GGZ-behandeling / niet verzekerd" aria-pressed="false">Buiten GGZ / niet verzekerd</button>
+      </div>
+    </div>
+    <div class="legend">
+      <span><i style="background: var(--color-ok)"></i>Vaak basis-GGZ</span>
+      <span><i style="background: var(--color-warn)"></i>Soms basis-GGZ</span>
+      <span><i style="background: var(--color-bad)"></i>Meestal verwijzen</span>
+      <span><i style="background: var(--cds-chart-muted)"></i>Buiten GGZ / niet verzekerd</span>
+    </div>
+    <div class="hgrid" data-draw="hfdgrid"></div>
+  </section>
+
+  <section id="cijfers" data-page="cijfers" class="stack" hidden>
+    <div class="tiles">
+      <div class="card tile" style="--tc: var(--color-fg)"><span class="lbl">Enige aandoening, 12 mnd</span><span class="big" data-draw="kpi" data-field="m12" data-where="stoornis=Enige%20psychische%20aandoening">—</span></div>
+      <div class="card tile" style="--tc: var(--lg-1)"><span class="lbl">Angststoornis, 12 mnd</span><span class="big" data-draw="kpi" data-field="m12" data-where="stoornis=Enige%20angststoornis">—</span></div>
+      <div class="card tile" style="--tc: var(--lg-0)"><span class="lbl">Stemmingsstoornis, 12 mnd</span><span class="big" data-draw="kpi" data-field="m12" data-where="stoornis=Enige%20stemmingsstoornis">—</span></div>
+      <div class="card tile" style="--tc: var(--lg-2)"><span class="lbl">Middelenstoornis, 12 mnd</span><span class="big" data-draw="kpi" data-field="m12" data-where="stoornis=Enige%20middelenstoornis">—</span></div>
+      <div class="card tile" style="--tc: var(--lg-3)"><span class="lbl">ADHD, 12 mnd</span><span class="big" data-draw="kpi" data-field="m12" data-where="stoornis=ADHD">—</span></div>
+    </div>
+    <div class="card">
+      <div class="row">
+        <div>
+          <h2>Hoe vaak komt elke stoornis voor?</h2>
+          <p class="note" style="margin: 0">Volwassenen 18–75 jaar, NEMESIS-3 (2019–2022). Tik op een balk voor details.</p>
+        </div>
+        <div class="row" style="margin: 0; justify-content: flex-start">
+          <div class="seg" role="group" aria-label="Periode">
+            <button data-prevmode="m12" aria-pressed="true">12 maanden</button>
+            <button data-prevmode="ooit" aria-pressed="false">Ooit</button>
+          </div>
+          <div class="seg" role="group" aria-label="Geslacht">
+            <button data-prevsex="" aria-pressed="true">Totaal</button>
+            <button data-prevsex="vrouw" aria-pressed="false">Vrouwen</button>
+            <button data-prevsex="man" aria-pressed="false">Mannen</button>
+          </div>
+        </div>
+      </div>
+      <div class="chips" style="margin: var(--cds-gap-sm) 0 var(--cds-gap-md)">
+        <button class="chip" data-prevgroup="" aria-pressed="true">Alle groepen</button>
+        <button class="chip" data-prevgroup="Stemming" aria-pressed="false">Stemming</button>
+        <button class="chip" data-prevgroup="Angst" aria-pressed="false">Angst</button>
+        <button class="chip" data-prevgroup="Middelen" aria-pressed="false">Middelen</button>
+        <button class="chip" data-prevgroup="ADHD" aria-pressed="false">ADHD</button>
+      </div>
+      <div class="prevwrap">
+        <div class="chart" data-draw="prevchart" style="min-height: 20rem"></div>
+        <div class="side" data-draw="prevdetail"></div>
+      </div>
+      <div class="legend" style="margin-top: var(--cds-gap-sm)">
+        <span><i style="background: var(--lg-0)"></i>Stemming</span>
+        <span><i style="background: var(--lg-1)"></i>Angst</span>
+        <span><i style="background: var(--lg-2)"></i>Middelen</span>
+        <span><i style="background: var(--lg-3)"></i>ADHD</span>
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="card">
+        <h2>Stijging in twaalf jaar</h2>
+        <p class="note">12-maandsprevalentie, 18–64 jaar, DSM-IV: 2007–2009 tegenover 2019–2022.</p>
+        <div class="chart" data-draw="trendchart"></div>
+        <div class="legend">
+          <span><i style="background: var(--cds-chart-muted)"></i>2007–2009</span>
+          <span><i style="background: var(--lg-0)"></i>2019–2022</span>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Jongvolwassenen het vaakst</h2>
+        <p class="note">Enige psychische aandoening in de afgelopen 12 maanden, per leeftijdsgroep.</p>
+        <div class="chart" data-draw="agechart"></div>
+      </div>
+    </div>
+  </section>
+
+  <details class="foot">
+    <summary>Over dit dashboard</summary>
+    <p>Naslag, klachtenwijzer en behandeldoelen zijn samenvattingen in eigen woorden van de DSM-5-criteria en gangbare richtlijnen (zorgstandaarden, NHG/NVAB). Ze vervangen het Handboek voor de classificatie van psychische stoornissen niet; check bij twijfel altijd de volledige criteria.</p>
+    <p>De indeling naar basis-GGZ is een globale indicatie; ernst, complexiteit en risico bepalen de juiste zorgvorm. Vergoedingsregels kunnen wijzigen.</p>
+    <p>Cijfers: ten Have e.a. (2023), World Psychiatry 22:275–285, NEMESIS-3, Trimbos-instituut.</p>
+  </details>
+</div>
+</div>
+</div>
+
+<div class="vlak" id="v-checklist" hidden>
+  <div class="uitleg" id="geenChecklist" hidden>
+    <div class="kaart">
+      <h2>Checklist nog niet gekoppeld</h2>
+      <p>Hier komt je checklist differentiaaldiagnostiek, met de terugkoppeling aan de bedrijfsarts en het adresboek. Het bestand staat alleen op je eigen computer en niet op GitHub, omdat er namen en het logo van de praktijk in staan.</p>
+      <button class="knop" onclick="post('kies-checklist')">Kies het bestand</button>
+    </div>
+  </div>
+</div>
+
+<script src="dsm/d3.min.js"></script>
+<script src="dsm/naslag.js"></script>
+<script src="dsm/cijfers.js"></script>
+<script src="dsm/oefenen.js"></script>
+<script>
+// ---------- kleine vervanging voor de dashboard-omgeving van Claude ----------
+function post(m){ if(window.chrome && chrome.webview) chrome.webview.postMessage(m); }
+window.dash = (function () {
+  const draws = {};
+  const colors = ['#3f6280', '#b8860b', '#b23a5b', '#2f7a55', '#6b4f8c', '#2e7d8a', '#8c5a2e', '#5d6678'];
+  return {
+    colors,
+    data(id) { const d = (window.DSMDATA || {})[id]; return d ? { status: 'ok', data: d } : { status: 'error', data: [] }; },
+    draw(name, fn) {
+      if (fn) draws[name] = fn;
+      const f = draws[name]; if (!f) return;
+      document.querySelectorAll('#dash-root [data-draw="' + name + '"]').forEach((e) => { try { f(e); } catch (x) { console.error(name, x); } });
+    },
+    setLink() {}
+  };
+})();
+// klachtenchips uit de naslag zelf
+(function(){
+  const lijst=['Somberheid','Interesseverlies','Piekeren','Spanning','Paniekaanvallen','Vermijding','Sociale angst','Angst buitenshuis','Slaapproblemen','Vermoeidheid','Concentratie','Prikkelbaarheid','Schuldgevoel','Laag zelfbeeld','Herbelevingen','Nachtmerries','Stressor/werk','Overspanning','Dwanggedachten','Dwanghandelingen','Lichamelijke klachten','Ziekteangst','Alcohol/middelen','Impulsiviteit','Uitstelgedrag','Langdurig'];
+  const label={ 'Stressor/werk':'Stressor / werk','Alcohol/middelen':'Alcohol / middelen','Langdurig':'Langer dan 2 jaar' };
+  const box=document.getElementById('klachtchips');
+  lijst.forEach(k=>{ const b=document.createElement('button'); b.className='chip'; b.dataset.kl=k; b.setAttribute('aria-pressed','false'); b.textContent=label[k]||k; box.appendChild(b); });
+})();
+</script>
+<script>
+(function () {
+  window.dsArr = (x) => { if (Array.isArray(x)) return x; if (typeof x === 'string') { try { const v = JSON.parse(x); return Array.isArray(v) ? v : (x ? [x] : []); } catch (e) { return x ? [x] : []; } } return []; };
+  window.dsState = window.dsState || { q: {}, kl: new Set(), sel: null, dtab: 'kern', rel: '', prevmode: 'm12', prevsex: '', prevgroup: '', prevsel: null, doel: null, checked: new Set() };
+  const S = window.dsState;
+  window.dsPct = (v) => (v == null || isNaN(v)) ? '—' : Number(v).toLocaleString('nl-NL', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + '%';
+  const groups = ['Stemming', 'Angst', 'Middelen', 'ADHD'];
+  window.dsGroupColor = (g) => dash.colors[Math.max(0, groups.indexOf(g))];
+  window.dsChapterColor = (h) => ({
+    'Depressieve-stemmingsstoornissen': dash.colors[0], 'Angststoornissen': dash.colors[1],
+    'Middelgerelateerde en verslavingsstoornissen': dash.colors[2], 'Neurobiologische ontwikkelingsstoornissen': dash.colors[3],
+    'Trauma- en stressorgerelateerde stoornissen': dash.colors[4], 'Obsessieve-compulsieve en verwante stoornissen': dash.colors[5],
+    'Somatisch-symptoomstoornis en verwante stoornissen': dash.colors[6], 'Slaap-waakstoornissen': dash.colors[7]
+  })[h] || dash.colors[0];
+  document.querySelectorAll('#dash-root .ds').forEach((root) => [0, 1, 2, 3, 4].forEach((i) => root.style.setProperty('--lg-' + i, dash.colors[i])));
+  const press = (sel, on) => document.querySelectorAll(sel).forEach((x) => x.setAttribute('aria-pressed', String(on(x))));
+
+  window.dsShowTab = (name) => {
+    document.querySelectorAll('#dash-root [data-tab]').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.tab === name)));
+    document.querySelectorAll('#dash-root [data-page]').forEach((s) => { s.hidden = s.dataset.page !== name; });
+    if (name === 'cijfers') ['prevchart', 'trendchart', 'agechart'].forEach((n) => dash.draw(n));
+  };
+  document.querySelectorAll('#dash-root [data-tab]').forEach((b) => b.addEventListener('click', () => window.dsShowTab(b.dataset.tab)));
+
+  const redrawFor = { naslag: ['dislist'], overzicht: ['hfdgrid'] };
+  document.querySelectorAll('#dash-root [data-search]').forEach((inp) => inp.addEventListener('input', () => {
+    S.q[inp.dataset.search] = inp.value.trim().toLowerCase();
+    (redrawFor[inp.dataset.search] || []).forEach((n) => dash.draw(n));
+  }));
+  document.querySelectorAll('#dash-root [data-kl]').forEach((b) => b.addEventListener('click', () => {
+    const k = b.dataset.kl;
+    S.kl.has(k) ? S.kl.delete(k) : S.kl.add(k);
+    b.setAttribute('aria-pressed', String(S.kl.has(k)));
+    S.autoSel = true;
+    dash.draw('dislist'); dash.draw('disdetail');
+  }));
+  document.querySelectorAll('#dash-root [data-klreset]').forEach((b) => b.addEventListener('click', () => {
+    S.kl.clear(); press('#dash-root [data-kl]', () => false);
+    dash.draw('dislist'); dash.draw('disdetail');
+  }));
+  document.querySelectorAll('#dash-root [data-rel]').forEach((b) => b.addEventListener('click', () => {
+    S.rel = b.dataset.rel; press('#dash-root [data-rel]', (x) => x.dataset.rel === S.rel); dash.draw('hfdgrid');
+  }));
+  document.querySelectorAll('#dash-root [data-prevmode]').forEach((b) => b.addEventListener('click', () => {
+    S.prevmode = b.dataset.prevmode; press('#dash-root [data-prevmode]', (x) => x === b); dash.draw('prevchart'); dash.draw('prevdetail');
+  }));
+  document.querySelectorAll('#dash-root [data-prevsex]').forEach((b) => b.addEventListener('click', () => {
+    S.prevsex = b.dataset.prevsex; press('#dash-root [data-prevsex]', (x) => x === b); dash.draw('prevchart');
+  }));
+  document.querySelectorAll('#dash-root [data-prevgroup]').forEach((b) => b.addEventListener('click', () => {
+    S.prevgroup = b.dataset.prevgroup; press('#dash-root [data-prevgroup]', (x) => x === b); dash.draw('prevchart');
+  }));
+  document.querySelectorAll('#dash-root [data-copy]').forEach((b) => b.addEventListener('click', async () => {
+    const ta = document.querySelector('#dash-root textarea.out');
+    if (!ta) return;
+    let ok = false;
+    try { await navigator.clipboard.writeText(ta.value); ok = true; } catch (e) {
+      try { ta.select(); ok = document.execCommand('copy'); } catch (e2) { ok = false; }
+    }
+    document.querySelectorAll('#dash-root [data-copied]').forEach((s) => { s.hidden = !ok; });
+    setTimeout(() => document.querySelectorAll('#dash-root [data-copied]').forEach((s) => { s.hidden = true; }), 2000);
+  }));
+  document.querySelectorAll('#dash-root [data-day]').forEach((b) => b.addEventListener('click', () => {
+    const v = Number(b.dataset.day);
+    S.dayOff = v === 0 ? 0 : (S.dayOff || 0) + v;
+    S.fc = null; S.cs = null;
+    document.querySelectorAll('#dash-root [data-day="0"]').forEach((x) => { x.hidden = S.dayOff === 0; });
+    ['daylabel', 'tip', 'tipcat', 'flash', 'casus'].forEach((n) => dash.draw(n));
+  }));
+  document.querySelectorAll('#dash-root [data-clearcheck]').forEach((b) => b.addEventListener('click', () => {
+    S.checked.clear(); S.outEdited = false; dash.draw('doelcheck'); dash.draw('doelout');
+  }));
+  document.querySelectorAll('#dash-root textarea.out').forEach((ta) => ta.addEventListener('input', () => { S.outEdited = true; }));
+})();
+</script>
+<script>
+(function () {
+  const S = window.dsState, pct = window.dsPct;
+  const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
+  const failed = (box) => { box.replaceChildren(el('div', 'fail', 'Laden lukte niet')); };
+  const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const dur = reduce ? 0 : 450;
+
+  dash.draw('kpi', (e) => {
+    const d = dash.data('prevalentie');
+    if (d.status !== 'ok') { e.textContent = '—'; return; }
+    const where = new URLSearchParams(e.getAttribute('data-where'));
+    const row = d.data.find((r) => r.stoornis === where.get('stoornis'));
+    e.textContent = row ? pct(row[e.getAttribute('data-field')]) : '—';
+  });
+
+  const scored = () => {
+    const d = dash.data('naslag');
+    if (d.status !== 'ok') return [];
+    const q = S.q.naslag || '';
+    return d.data
+      .filter((r) => !q || JSON.stringify(r).toLowerCase().includes(q))
+      .map((r) => ({ r, hits: window.dsArr(r.klachten).filter((k) => S.kl.has(k)).length }))
+      .sort((a, b) => S.kl.size ? (b.hits - a.hits) || (b.hits / window.dsArr(b.r.klachten).length - a.hits / window.dsArr(a.r.klachten).length) : 0);
+  };
+
+  dash.draw('dislist', (box) => {
+    const d = dash.data('naslag');
+    if (d.status === 'error') return failed(box);
+    box.replaceChildren();
+    const items = scored();
+    if (S.autoSel && S.kl.size && items.length && items[0].hits) { S.sel = items[0].r.stoornis; }
+    S.autoSel = false;
+    if (!S.sel || !d.data.some((r) => r.stoornis === S.sel)) S.sel = d.data[0].stoornis;
+    if (!items.length) { box.appendChild(el('p', 'muted', 'Niets gevonden.')); return; }
+    items.forEach(({ r, hits }) => {
+      const b = el('button', 'item' + (S.kl.size && !hits ? ' dim' : ''));
+      b.setAttribute('aria-current', String(r.stoornis === S.sel));
+      const bar = el('span', 'bar'); bar.style.background = window.dsChapterColor(r.hoofdstuk);
+      const mid = el('span'); mid.append(el('span', 'nm', r.stoornis), el('span', 'sub', r.hoofdstuk));
+      b.append(bar, mid);
+      if (S.kl.size) b.appendChild(el('span', 'badge' + (hits ? ' hot' : ''), hits + ' / ' + S.kl.size));
+      b.addEventListener('click', () => { S.sel = r.stoornis; S.dtab = S.dtab || 'kern'; dash.draw('dislist'); dash.draw('disdetail'); });
+      box.appendChild(b);
+    });
+  });
+
+  const dtabs = [['kern', 'Kern & criteria'], ['diff', 'Differentiaal & meten'], ['doelen', 'Doelen & interventies']];
+  dash.draw('disdetail', (box) => {
+    const d = dash.data('naslag'), p = dash.data('prevalentie');
+    if (d.status === 'error') return failed(box);
+    box.replaceChildren();
+    const r = d.data.find((x) => x.stoornis === S.sel) || d.data[0];
+    if (!r) return;
+    const col = window.dsChapterColor(r.hoofdstuk);
+    box.style.setProperty('--acc', col);
+    const head = el('div', 'dhead');
+    const left = el('div'); left.append(el('h2', null, r.stoornis), el('div', 'sub', r.hoofdstuk));
+    head.appendChild(left);
+    const pr = p.status === 'ok' && r.prev ? p.data.find((x) => x.stoornis === r.prev) : null;
+    if (pr) {
+      const ring = el('div', 'ring');
+      const W = 46, R = 19, C = 2 * Math.PI * R, frac = Math.min(1, pr.m12 / 30);
+      const ns = 'http://www.w3.org/2000/svg';
+      const svg = document.createElementNS(ns, 'svg'); svg.setAttribute('width', W); svg.setAttribute('height', W); svg.setAttribute('viewBox', `0 0 ${W} ${W}`);
+      const bg = document.createElementNS(ns, 'circle'); bg.setAttribute('cx', W / 2); bg.setAttribute('cy', W / 2); bg.setAttribute('r', R); bg.setAttribute('fill', 'none'); bg.setAttribute('stroke', '#dde1ea'); bg.setAttribute('stroke-width', '5');
+      const fg = document.createElementNS(ns, 'circle'); fg.setAttribute('cx', W / 2); fg.setAttribute('cy', W / 2); fg.setAttribute('r', R); fg.setAttribute('fill', 'none'); fg.setAttribute('stroke', col); fg.setAttribute('stroke-width', '5'); fg.setAttribute('stroke-linecap', 'round');
+      fg.setAttribute('stroke-dasharray', `${C * frac} ${C}`); fg.setAttribute('transform', `rotate(-90 ${W / 2} ${W / 2})`);
+      svg.append(bg, fg);
+      const t = el('div'); const v = el('b', null, pct(pr.m12));
+      t.append(v, document.createTextNode('van volwassenen in NL, afgelopen jaar'));
+      ring.append(svg, t);
+      head.appendChild(ring);
+    }
+    box.appendChild(head);
+    if (window.dsArr(r.klachten).length) {
+      const tags = el('div', 'tags');
+      window.dsArr(r.klachten).forEach((k) => tags.appendChild(el('span', 'tag' + (S.kl.has(k) ? ' on' : ''), k)));
+      tags.style.marginTop = '0'; tags.style.marginBottom = 'var(--cds-gap-md)';
+      box.appendChild(tags);
+    }
+    const tabs = el('div', 'dtabs');
+    dtabs.forEach(([k, label]) => {
+      const b = el('button', 'chip', label); b.setAttribute('aria-pressed', String(S.dtab === k));
+      b.addEventListener('click', () => { S.dtab = k; dash.draw('disdetail'); });
+      tabs.appendChild(b);
+    });
+    box.appendChild(tabs);
+    const panel = el('div', 'dpanel');
+    const kv = (pairs) => { const g = el('div', 'kv'); pairs.forEach(([h, t]) => { const c = el('div'); c.append(el('h3', null, h), el('p', null, t)); g.appendChild(c); }); return g; };
+    if (S.dtab === 'diff') {
+      panel.appendChild(kv([['Differentiaaldiagnose', r.differentiaal], ['Meetinstrumenten', r.instrumenten], ['Specificaties', r.specificaties]]));
+    } else if (S.dtab === 'doelen') {
+      panel.appendChild(el('h3', null, 'Voorbeeld-behandeldoelen')).style.cssText = 'font-size: var(--cds-font-size-caption); text-transform: uppercase; letter-spacing: .05em; color: var(--color-fg-muted); margin: 0 0 6px; font-weight: 500';
+      const ul = el('ul'); window.dsArr(r.behandeldoelen).forEach((g) => ul.appendChild(el('li', null, g))); panel.appendChild(ul);
+      const iv = kv([['Interventies', r.interventies]]); iv.style.marginTop = 'var(--cds-gap-md)'; panel.appendChild(iv);
+      const go = el('button', 'cta', 'Gebruik in doelenbouwer →'); go.style.marginTop = 'var(--cds-gap-md)';
+      go.addEventListener('click', () => { S.doel = r.stoornis; S.checked.clear(); S.outEdited = false; ['doelsel','doelcheck','doelout','doelinfo'].forEach((n) => dash.draw(n)); window.dsShowTab('doelen'); });
+      panel.appendChild(go);
+    } else {
+      panel.appendChild(el('p', null, r.kern));
+      panel.appendChild(kv([['Criteria in het kort', r.criteria]]));
+    }
+    box.appendChild(panel);
+  });
+
+  const curDoel = () => {
+    const d = dash.data('naslag'); if (d.status !== 'ok') return null;
+    if (!S.doel || !d.data.some((r) => r.stoornis === S.doel)) S.doel = (d.data.find((r) => r.stoornis === S.sel) || d.data[0]).stoornis;
+    return d.data.find((r) => r.stoornis === S.doel);
+  };
+  dash.draw('doelsel', (sel) => {
+    const d = dash.data('naslag');
+    sel.replaceChildren();
+    if (d.status !== 'ok') return;
+    d.data.forEach((r) => sel.appendChild(new Option(r.stoornis, r.stoornis)));
+    sel.value = curDoel().stoornis;
+    sel.onchange = () => { S.doel = sel.value; S.checked.clear(); S.outEdited = false; dash.draw('doelcheck'); dash.draw('doelout'); dash.draw('doelinfo'); };
+  });
+  dash.draw('doelcheck', (box) => {
+    box.replaceChildren();
+    const r = curDoel(); if (!r) return;
+    window.dsArr(r.behandeldoelen).forEach((g, i) => {
+      const lab = el('label', 'ck');
+      const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = S.checked.has(i);
+      cb.addEventListener('change', () => { cb.checked ? S.checked.add(i) : S.checked.delete(i); S.outEdited = false; dash.draw('doelout'); });
+      lab.append(cb, el('span', null, g));
+      box.appendChild(lab);
+    });
+  });
+  dash.draw('doelinfo', (box) => {
+    box.replaceChildren();
+    const r = curDoel(); if (!r) return;
+    const a = el('div'); a.append(el('b', null, 'Interventies: '), document.createTextNode(r.interventies));
+    const b = el('div'); b.append(el('b', null, 'Voortgang meten: '), document.createTextNode(r.instrumenten));
+    box.append(a, b);
+  });
+  dash.draw('doelout', (ta) => {
+    const r = curDoel(); if (!r) { ta.value = ''; return; }
+    if (S.outEdited && ta.value) return;
+    const picked = window.dsArr(r.behandeldoelen).filter((g, i) => S.checked.has(i));
+    const lines = ['Werkhypothese / classificatie: ' + r.stoornis, '', 'Behandeldoelen:'];
+    if (picked.length) picked.forEach((g, i) => lines.push((i + 1) + '. ' + g));
+    else lines.push('(vink links doelen aan)');
+    lines.push('', 'Interventies: ' + r.interventies, 'Evaluatie: ' + r.instrumenten.split('.')[0] + ', bij start en evaluatie.');
+    ta.value = lines.join('\n');
+  });
+
+  const relColor = { 'Vaak basis-GGZ': 'var(--color-ok)', 'Soms basis-GGZ': 'var(--color-warn)', 'Meestal S-GGZ / verwijzen': 'var(--color-bad)' };
+  dash.draw('hfdgrid', (box) => {
+    const d = dash.data('hoofdstukken');
+    if (d.status === 'error') return failed(box);
+    box.replaceChildren();
+    const q = S.q.overzicht || '';
+    const rows = d.data.filter((r) => (!S.rel || r.relevantie === S.rel) && (!q || JSON.stringify(r).toLowerCase().includes(q)));
+    if (!rows.length) { box.appendChild(el('p', 'muted', 'Niets gevonden.')); return; }
+    rows.forEach((r) => {
+      const det = el('details', 'hc'); det.style.setProperty('--rel-c', relColor[r.relevantie] || 'var(--cds-chart-muted)');
+      if (q) det.open = true;
+      const s = el('summary'); s.append(el('span', 'nr', String(r.nr)), el('span', 'ti', r.hoofdstuk), el('span', 'rl', r.relevantie));
+      const body = el('div', 'hb'); body.appendChild(el('p', null, r.voorbeelden));
+      if (r.toelichting) body.appendChild(el('p', 'muted', r.toelichting));
+      det.append(s, body); box.appendChild(det);
+    });
+  });
+
+  const tip = (box) => {
+    let t = box.querySelector(':scope > .tip');
+    if (!t) { t = el('div', 'tip'); t.hidden = true; box.appendChild(t); }
+    return {
+      show(ev, title, lines) {
+        t.replaceChildren(el('div', 't', title)); lines.forEach((l) => t.appendChild(el('div', null, l))); t.hidden = false;
+        const r = box.getBoundingClientRect(); let x = ev.clientX - r.left + 12, y = ev.clientY - r.top + 12;
+        if (x + t.offsetWidth > r.width) x = Math.max(0, ev.clientX - r.left - t.offsetWidth - 12);
+        if (y + t.offsetHeight > r.height) y = Math.max(0, ev.clientY - r.top - t.offsetHeight - 12);
+        t.style.left = x + 'px'; t.style.top = y + 'px';
+      },
+      hide() { t.hidden = true; }
+    };
+  };
+
+  dash.draw('prevchart', (box) => {
+    const d = dash.data('prevalentie');
+    box.replaceChildren();
+    if (d.status === 'error') return failed(box);
+    if (!box.clientWidth) return;
+    const field = S.prevmode + (S.prevsex ? '_' + S.prevsex : '');
+    const rows = d.data.filter((r) => !r.stoornis.startsWith('Enige') && (!S.prevgroup || r.groep === S.prevgroup))
+      .map((r) => ({ ...r, v: Number(r[field]) })).sort((a, b) => b.v - a.v);
+    if (!S.prevsel || !d.data.some((r) => r.stoornis === S.prevsel)) S.prevsel = rows[0] && rows[0].stoornis;
+    const W = box.clientWidth || 600, bh = 20, gap = 8;
+    const H = rows.length * (bh + gap);
+    const svg = d3.select(box).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`);
+    const probe = svg.append('g'); let lw = 0;
+    rows.forEach((r) => { lw = Math.max(lw, probe.append('text').text(r.stoornis).node().getComputedTextLength()); });
+    probe.remove(); lw = Math.min(lw + 12, W * 0.48);
+    const x = d3.scaleLinear([0, Math.max(30, d3.max(rows, (r) => r.v) || 1)], [0, Math.max(10, W - lw - 48)]);
+    const tp = tip(box);
+    const g = svg.selectAll('g.r').data(rows).join('g').attr('class', (r) => 'r' + (r.stoornis === S.prevsel ? ' sel' : ''))
+      .attr('transform', (r, i) => `translate(0,${i * (bh + gap)})`);
+    g.append('rect').attr('class', 'hit').attr('x', 0).attr('width', W).attr('height', bh + gap).attr('y', -gap / 2).attr('fill', 'transparent');
+    g.append('text').attr('class', 'lab').attr('x', lw - 12).attr('y', bh / 2).attr('dy', '0.35em').attr('text-anchor', 'end').text((r) => r.stoornis);
+    g.append('rect').attr('x', lw).attr('height', bh).attr('rx', 4).attr('width', 0)
+      .attr('fill', (r) => window.dsGroupColor(r.groep)).attr('opacity', (r) => r.stoornis === S.prevsel ? 1 : 0.72)
+      .transition().duration(dur).ease(d3.easeCubicOut).delay((r, i) => reduce ? 0 : i * 25).attr('width', (r) => Math.max(2, x(r.v)));
+    g.append('text').attr('class', 'val').attr('x', (r) => lw + x(r.v) + 6).attr('y', bh / 2).attr('dy', '0.35em').text((r) => pct(r.v));
+    g.style('cursor', 'pointer')
+      .on('mousemove', (ev, r) => tp.show(ev, r.stoornis, ['Vrouwen: ' + pct(r[S.prevmode + '_vrouw']), 'Mannen: ' + pct(r[S.prevmode + '_man'])]))
+      .on('mouseleave', () => tp.hide())
+      .on('click', (ev, r) => { S.prevsel = r.stoornis; dash.draw('prevchart'); dash.draw('prevdetail'); });
+  });
+
+  dash.draw('prevdetail', (box) => {
+    const d = dash.data('prevalentie');
+    box.replaceChildren();
+    if (d.status !== 'ok') return;
+    if (!S.prevsel) S.prevsel = 'Depressieve stoornis';
+    const r = d.data.find((x) => x.stoornis === S.prevsel);
+    if (!r) return;
+    const col = window.dsGroupColor(r.groep);
+    box.append(el('div', 'muted', r.groep), el('h3', null, r.stoornis));
+    const sv = el('span', 'sv', pct(r[S.prevmode])); sv.style.color = col; box.appendChild(sv);
+    box.appendChild(el('div', 'note', S.prevmode === 'm12' ? 'afgelopen 12 maanden' : 'ooit in het leven'));
+    const mx = Math.max(r.ooit_vrouw, r.ooit_man, r.ooit, 1);
+    [['Vrouwen', r[S.prevmode + '_vrouw']], ['Mannen', r[S.prevmode + '_man']], ['12 maanden', r.m12], ['Ooit', r.ooit]].forEach(([l, v], i) => {
+      if (i === 2) box.appendChild(el('div', 'note', 'Totaal')).style.margin = 'var(--cds-gap-sm) 0 6px';
+      const m = el('div', 'mini'); const tr = el('div', 'track'); const f = el('div', 'fill');
+      f.style.background = col; f.style.width = (100 * v / mx) + '%'; f.style.opacity = i < 2 ? '1' : '.6';
+      tr.appendChild(f); m.append(el('span', null, l), tr, el('span', 'n', pct(v))); box.appendChild(m);
+    });
+    const d1 = r[S.prevmode + '_vrouw'], d2 = r[S.prevmode + '_man'];
+    const ratio = d2 > 0 ? d1 / d2 : null;
+    if (ratio) box.appendChild(el('p', 'note', ratio >= 1 ? `Bij vrouwen ${ratio.toLocaleString('nl-NL', { maximumFractionDigits: 1 })}× zo vaak als bij mannen.` : `Bij mannen ${(1 / ratio).toLocaleString('nl-NL', { maximumFractionDigits: 1 })}× zo vaak als bij vrouwen.`)).style.marginTop = 'var(--cds-gap-sm)';
+  });
+
+  const vbars = (box, rows, key, series, colors, labels) => {
+    const W = box.clientWidth || 400, H = 230, m = { t: 20, r: 4, b: 34, l: 4 };
+    const svg = d3.select(box).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`);
+    const x0 = d3.scaleBand(rows.map((r) => r[key]), [m.l, W - m.r]).paddingInner(0.25).paddingOuter(0.1);
+    const x1 = d3.scaleBand(series, [0, x0.bandwidth()]).padding(0.1);
+    const y = d3.scaleLinear([0, d3.max(rows, (r) => d3.max(series, (s) => Number(r[s]))) * 1.15], [H - m.b, m.t]);
+    svg.append('line').attr('x1', m.l).attr('x2', W - m.r).attr('y1', y(0)).attr('y2', y(0)).attr('stroke', '#c3c9d4');
+    const tp = tip(box);
+    const g = svg.selectAll('g.c').data(rows).join('g').attr('class', 'c').attr('transform', (r) => `translate(${x0(r[key])},0)`);
+    series.forEach((s, i) => {
+      const bw = Math.min(32, x1.bandwidth()), off = x1(s) + (x1.bandwidth() - bw) / 2;
+      g.append('rect').attr('x', off).attr('width', bw).attr('rx', 4).attr('fill', colors[i]).attr('y', y(0)).attr('height', 0)
+        .transition().duration(dur).ease(d3.easeCubicOut).attr('y', (r) => y(Number(r[s]))).attr('height', (r) => y(0) - y(Number(r[s])));
+      g.append('text').attr('class', 'val').attr('x', off + bw / 2).attr('y', (r) => y(Number(r[s])) - 5).attr('text-anchor', 'middle').text((r) => pct(r[s]).replace('%', ''));
+    });
+    g.append('rect').attr('width', x0.bandwidth()).attr('y', m.t).attr('height', H - m.t - m.b).attr('fill', 'transparent')
+      .on('mousemove', (ev, r) => tp.show(ev, r[key], series.map((s, j) => labels[j] + ': ' + pct(r[s]))))
+      .on('mouseleave', () => tp.hide());
+    g.append('text').attr('x', x0.bandwidth() / 2).attr('y', H - m.b + 18).attr('text-anchor', 'middle').text((r) => r[key]);
+  };
+  dash.draw('trendchart', (box) => {
+    const d = dash.data('trend'); box.replaceChildren();
+    if (d.status === 'error') return failed(box); if (!box.clientWidth) return;
+    vbars(box, d.data, 'groep', ['n2', 'n3'], ['#c3c9d4', dash.colors[0]], ['2007–2009', '2019–2022']);
+  });
+  dash.draw('agechart', (box) => {
+    const d = dash.data('leeftijd'); box.replaceChildren();
+    if (d.status === 'error') return failed(box); if (!box.clientWidth) return;
+    vbars(box, d.data, 'leeftijd', ['m12'], [dash.colors[1]], ['12 maanden']);
+  });
+})();
+</script>
+<script>
+(function () {
+  const S = window.dsState;
+  S.dayOff = S.dayOff || 0;
+  const el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
+  const failed = (box) => { box.replaceChildren(el('div', 'fail', 'Laden lukte niet')); };
+  const theDate = () => { const d = new Date(); d.setDate(d.getDate() + (S.dayOff || 0)); return d; };
+  const dayNum = () => { const d = theDate(); return Math.floor(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 864e5); };
+
+  dash.draw('daylabel', (e) => {
+    const off = S.dayOff || 0;
+    const txt = theDate().toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long' });
+    e.textContent = off === 0 ? 'Vandaag, ' + txt : off === -1 ? 'Gisteren, ' + txt : off === 1 ? 'Morgen, ' + txt : txt.charAt(0).toUpperCase() + txt.slice(1);
+  });
+  const tipRow = () => { const d = dash.data('tips'); return d.status === 'ok' && d.data.length ? d.data[dayNum() % d.data.length] : null; };
+  dash.draw('tip', (e) => { const r = tipRow(); e.textContent = r ? r.tip : '—'; });
+  dash.draw('tipcat', (e) => { const r = tipRow(); e.textContent = r ? r.categorie : '—'; });
+
+  dash.draw('flash', (box) => {
+    const d = dash.data('flashcards');
+    if (d.status === 'error') return failed(box);
+    box.replaceChildren();
+    if (!d.data.length) return;
+    const n = d.data.length, start = (dayNum() * 5) % n;
+    const day = [0, 1, 2, 3, 4].map((i) => d.data[(start + i) % n]);
+    if (!S.fc) S.fc = { order: [0, 1, 2, 3, 4], i: 0, res: {}, flipped: false };
+    const F = S.fc;
+    const dots = el('div', 'dots');
+    day.forEach((c, k) => {
+      dots.appendChild(el('span', 'dot' + (F.res[k] === true ? ' yes' : F.res[k] === false ? ' no' : '') + (F.order[F.i] === k ? ' cur' : '')));
+    });
+    box.appendChild(dots);
+    if (F.i >= F.order.length) {
+      const known = day.filter((c, k) => F.res[k] === true).length;
+      const sc = el('div', 'score');
+      sc.append(el('span', 'big', known + ' / 5'), el('div', 'muted', known === 5 ? 'Alles gekend, top!' : known >= 3 ? 'Goed bezig.' : 'Even herhalen helpt.'));
+      box.appendChild(sc);
+      const row = el('div', 'row'); row.style.justifyContent = 'center';
+      const again = el('button', 'cta ghost', 'Opnieuw alle vijf');
+      again.addEventListener('click', () => { S.fc = null; dash.draw('flash'); });
+      row.appendChild(again);
+      const miss = day.map((c, k) => k).filter((k) => F.res[k] !== true);
+      if (miss.length && miss.length < 5) {
+        const rep = el('button', 'cta', 'Oefen de ' + miss.length + ' die je nog niet wist');
+        rep.addEventListener('click', () => { S.fc = { order: miss, i: 0, res: Object.fromEntries(day.map((c, k) => [k, F.res[k] === true ? true : undefined])), flipped: false }; dash.draw('flash'); });
+        row.appendChild(rep);
+      }
+      box.appendChild(row);
+      return;
+    }
+    const k = F.order[F.i], c = day[k];
+    const flip = el('div', 'flip' + (F.flipped ? ' on' : ''));
+    flip.tabIndex = 0; flip.setAttribute('role', 'button'); flip.setAttribute('aria-label', 'Draai kaart om');
+    const inner = el('div', 'inner');
+    const front = el('div', 'face front'); front.append(el('span', 'k', 'Vraag ' + (F.i + 1) + ' van ' + F.order.length), el('p', null, c.vraag), el('span', 'hint', 'Tik om het antwoord te zien'));
+    const back = el('div', 'face back'); back.append(el('span', 'k', 'Antwoord'), el('p', null, c.antwoord));
+    inner.append(front, back); flip.appendChild(inner);
+    box.appendChild(flip);
+    const btns = el('div', 'fcbtns');
+    const prev = el('button', 'cta ghost', '‹'); prev.setAttribute('aria-label', 'Vorige kaart'); prev.disabled = F.i === 0;
+    const no = el('button', 'cta no', 'Nog oefenen');
+    const yes = el('button', 'cta yes', 'Wist ik');
+    const next = el('button', 'cta ghost', '›'); next.setAttribute('aria-label', 'Volgende kaart');
+    const setFlip = (on) => { F.flipped = on; flip.classList.toggle('on', on); no.disabled = yes.disabled = !on; };
+    setFlip(F.flipped);
+    const toggle = () => setFlip(!F.flipped);
+    flip.addEventListener('click', toggle);
+    flip.addEventListener('keydown', (ev) => { if (ev.key === ' ' || ev.key === 'Enter') { ev.preventDefault(); toggle(); } });
+    const go = (delta, mark) => { if (mark !== undefined) F.res[k] = mark; F.i = Math.max(0, F.i + delta); F.flipped = false; dash.draw('flash'); };
+    prev.addEventListener('click', () => go(-1));
+    next.addEventListener('click', () => go(1));
+    no.addEventListener('click', () => go(1, false));
+    yes.addEventListener('click', () => go(1, true));
+    btns.append(prev, no, yes, next);
+    box.appendChild(btns);
+  });
+
+  dash.draw('casus', (box) => {
+    const d = dash.data('casussen');
+    if (d.status === 'error') return failed(box);
+    box.replaceChildren();
+    if (!d.data.length) return;
+    const c = d.data[dayNum() % d.data.length];
+    if (!S.cs) S.cs = { pick: null };
+    const P = S.cs.pick;
+    box.append(el('p', 'casehead', c.titel), el('p', 'casetxt', c.casus));
+    box.appendChild(el('p', 'note', 'Welke classificatie past het best?')).style.margin = '0 0 6px';
+    const opts = el('div', 'opts');
+    window.dsArr(c.opties).forEach((o, i) => {
+      let cls = 'opt';
+      if (P !== null) cls += i === Number(c.goed) ? ' right' : i === P ? ' wrong' : ' faded';
+      const b = el('button', cls, o); b.disabled = P !== null;
+      b.addEventListener('click', () => { S.cs.pick = i; dash.draw('casus'); });
+      opts.appendChild(b);
+    });
+    box.appendChild(opts);
+    if (P === null) return;
+    const ok = P === Number(c.goed);
+    const fb = el('div', 'fb');
+    fb.appendChild(el('div', 'verdict ' + (ok ? 'okc' : 'badc'), ok ? 'Goed gezien!' : 'Net niet: het antwoord is ' + window.dsArr(c.opties)[Number(c.goed)] + '.'));
+    fb.appendChild(el('p', null, c.uitleg));
+    const b1 = el('div', 'box'); b1.append(el('h3', null, 'Let op'), el('p', null, c.tip)); fb.appendChild(b1);
+    const b2 = el('div', 'box'); b2.append(el('h3', null, 'Voorbeeld-behandeldoel'), el('p', null, c.doel)); fb.appendChild(b2);
+    const row = el('div', 'row'); row.style.justifyContent = 'flex-start';
+    const again = el('button', 'cta ghost', 'Opnieuw proberen');
+    again.addEventListener('click', () => { S.cs.pick = null; dash.draw('casus'); });
+    row.appendChild(again);
+    if (c.naslag) {
+      const look = el('button', 'cta', 'Bekijk ' + c.naslag + ' in naslag →');
+      look.addEventListener('click', () => { S.sel = c.naslag; S.dtab = 'kern'; window.dsShowTab('naslag'); dash.draw('dislist'); dash.draw('disdetail'); });
+      row.appendChild(look);
+    }
+    fb.appendChild(row);
+    box.appendChild(fb);
+  });
+})();
+</script>
+<script>
+// ---------- de twee onderdelen van dit tabblad ----------
+(function(){
+  let checklistGeladen=false;
+  function laadChecklist(){
+    fetch('eigen/checklist.html',{method:'HEAD',cache:'no-store'}).then(r=>{
+      if(!r.ok) throw 0;
+      document.getElementById('geenChecklist').hidden=true;
+      const oud=document.querySelector('#v-checklist iframe'); if(oud) oud.remove();
+      const f=document.createElement('iframe'); f.src='eigen/checklist.html?t='+Date.now(); f.title='Checklist differentiaaldiagnostiek';
+      document.getElementById('v-checklist').appendChild(f);
+    }).catch(()=>{ document.getElementById('geenChecklist').hidden=false; });
+  }
+  function toon(naam){
+    document.querySelectorAll(".hoofdtab").forEach(b=>b.classList.toggle('on',b.dataset.vlak===naam));
+    document.querySelectorAll('.vlak').forEach(v=>v.hidden=v.id!=='v-'+naam);
+    if(naam==='checklist' && !checklistGeladen){ checklistGeladen=true; laadChecklist(); }
+    if(naam==='naslag') ['prevchart','trendchart','agechart'].forEach(n=>dash.draw(n));
+  }
+  window.toonOnderdeel=toon;
+  document.querySelectorAll(".hoofdtab").forEach(b=>b.onclick=()=>toon(b.dataset.vlak));
+  if(window.chrome && chrome.webview){
+    chrome.webview.addEventListener('message',ev=>{
+      if(ev.data==='checklist-ok'){ checklistGeladen=true; laadChecklist(); }
+      if(ev.data==='toon-checklist') toon('checklist');
+    });
+  }
+  window.addEventListener('hashchange',()=>{ if(location.hash==='#checklist') toon('checklist'); });
+  window.addEventListener('resize',()=>['prevchart','trendchart','agechart'].forEach(n=>dash.draw(n)));
+  toon(location.hash==='#checklist'?'checklist':'naslag');
+})();
+</script>
+</body>
+</html>

@@ -14,11 +14,8 @@ remarkable = https://my.remarkable.com/
 caseload =
 
 # Plek van je checklist (Differentiaaldiagnostiek), bijv. C:\Users\jasmijn\OneDrive\Tools\checklist.html
-# Hart Werkplek zet hem in het tabblad Rapportages en neemt een nieuwere versie vanzelf over.
+# Hart Werkplek zet hem in het tabblad DSM en neemt een nieuwere versie vanzelf over.
 checklist =
-
-# Leeg = je DSM-5 dashboard op claude.ai
-dsm =
 
 # Leeg = je aanmeldpaneel van GitHub; "uit" = geen aanmeldpaneel op de startpagina
 aanmeldpaneel =
