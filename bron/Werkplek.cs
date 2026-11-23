@@ -874,12 +874,13 @@ class MainForm : Form
         clip.Controls.Add(clipList);
 
         Label hint = new Label();
+        clipHint = hint;
         hint.Dock = DockStyle.Top;
         hint.Height = S(64);
         hint.Padding = new Padding(S(14), 0, S(14), 0);
         hint.ForeColor = Muted;
         hint.Font = new Font("Segoe UI", 9f);
-        hint.Text = "Downloads komen hier binnen. Sleep een bestand naar James om het te uploaden. Na 1 dag wordt het vanzelf gewist.";
+        hint.Text = ClipUitleg;
         clip.Controls.Add(hint);
 
         Panel head = new Panel();
@@ -946,6 +947,47 @@ class MainForm : Form
         return null;
     }
 
+    Label clipHint;
+    System.Windows.Forms.Timer meldingTimer;
+    const string ClipUitleg = "Downloads komen hier binnen. Sleep een bestand naar James om het te uploaden. Na 1 dag wordt het vanzelf gewist.";
+
+    void ToonMelding(string tekst)
+    {
+        if (clipHint == null) return;
+        clip.Visible = true;
+        StyleClipButton();
+        clipHint.Height = S(96);
+        clipHint.ForeColor = Accent;
+        clipHint.Text = tekst;
+        if (meldingTimer == null)
+        {
+            meldingTimer = new System.Windows.Forms.Timer();
+            meldingTimer.Interval = 12000;
+            meldingTimer.Tick += delegate
+            {
+                meldingTimer.Stop();
+                clipHint.Height = S(64);
+                clipHint.ForeColor = Muted;
+                clipHint.Text = ClipUitleg;
+            };
+        }
+        meldingTimer.Stop();
+        meldingTimer.Start();
+    }
+
+    static bool IsWebpagina(string pad)
+    {
+        string ext = Path.GetExtension(pad).ToLowerInvariant();
+        return ext == ".htm" || ext == ".html" || ext == ".url" || ext == ".mht";
+    }
+
+    static bool LijktBestand(string url)
+    {
+        string u = url.ToLowerInvariant();
+        int q = u.IndexOf('?'); string pad = q >= 0 ? u.Substring(0, q) : u;
+        return pad.EndsWith(".pdf") || pad.EndsWith(".png") || pad.EndsWith(".jpg") || pad.EndsWith(".jpeg") || pad.EndsWith(".zip") || pad.EndsWith(".epub") || pad.EndsWith(".rmdoc") || u.Contains("download");
+    }
+
     void ClipDragEnter(object sender, DragEventArgs e)
     {
         bool ok = e.Data.GetDataPresent(DataFormats.FileDrop) || e.Data.GetDataPresent("FileGroupDescriptorW") || DropUrl(e.Data) != null;
@@ -965,11 +1007,20 @@ class MainForm : Form
                 try { File.Copy(f, UniquePath(Path.GetFileName(f))); n++; } catch { }
             }
         }
-        if (n == 0 && e.Data.GetDataPresent("FileGroupDescriptorW")) n = SaveVirtualFiles(e.Data);
+        if (n == 0 && e.Data.GetDataPresent("FileGroupDescriptorW"))
+        {
+            List<string> paden = new List<string>();
+            SaveVirtualFiles(e.Data, paden);
+            // Een webpagina in plaats van het bestand zelf (bijv. een link uit reMarkable): niet bewaren
+            bool alleenPagina = paden.Count > 0 && paden.TrueForAll(IsWebpagina);
+            if (alleenPagina) foreach (string pp in paden) { try { File.Delete(pp); } catch { } }
+            else n = paden.Count;
+        }
         if (n == 0)
         {
             string url = DropUrl(e.Data);
-            if (url != null) DownloadVanLink(url);
+            if (url != null && LijktBestand(url)) DownloadVanLink(url);
+            else ToonMelding("Dit is een link naar een pagina, niet het bestand zelf. Kies in reMarkable bij het document Downloaden of Exporteren als pdf: de pdf komt dan vanzelf hier op het klembord.");
         }
         RefreshClips();
     }
@@ -979,7 +1030,7 @@ class MainForm : Form
     [DllImport("kernel32.dll")] static extern bool GlobalUnlock(IntPtr hMem);
     [DllImport("kernel32.dll")] static extern UIntPtr GlobalSize(IntPtr hMem);
 
-    int SaveVirtualFiles(IDataObject data)
+    int SaveVirtualFiles(IDataObject data, List<string> paden)
     {
         int saved = 0;
         try
@@ -1032,6 +1083,7 @@ class MainForm : Form
                             finally { Marshal.FreeHGlobal(pRead); }
                         }
                         saved++;
+                        paden.Add(path);
                     }
                     else if (med.tymed == System.Runtime.InteropServices.ComTypes.TYMED.TYMED_HGLOBAL)
                     {
@@ -1043,6 +1095,7 @@ class MainForm : Form
                             Marshal.Copy(p, buf, 0, size);
                             File.WriteAllBytes(path, buf);
                             saved++;
+                            paden.Add(path);
                         }
                         finally { GlobalUnlock(med.unionmember); }
                     }

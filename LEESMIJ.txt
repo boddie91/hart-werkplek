@@ -73,3 +73,6 @@ Versie 12
 
 Versie 13
 - Bijwerken, Instellingen, Venster en Afsluiten zijn icoontjes naast elkaar onderin het menu (wijs ze aan voor de naam). Is er een nieuwe versie, dan kleurt het Bijwerken-icoon rood.
+
+Versie 14
+- Klembord: een gesleepte link naar een pagina (zoals een document in reMarkable) wordt niet meer als .htm bewaard. Je krijgt dan een tip om Downloaden te gebruiken.
