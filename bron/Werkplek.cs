@@ -1732,6 +1732,8 @@ class MainForm : Form
         e.ResultFilePath = UniquePath(name);
         e.Handled = true; // geen downloadbalk; het klembord laat het zien
         CoreWebView2DownloadOperation op = e.DownloadOperation;
+        string pad = e.ResultFilePath;
+        bool vanWerkplek = (op.Uri ?? "").IndexOf("werkplek.local", StringComparison.OrdinalIgnoreCase) >= 0;
         op.StateChanged += delegate
         {
             BeginInvoke(new Action(delegate
@@ -1739,6 +1741,12 @@ class MainForm : Form
                 RefreshClips();
                 if (op.State == CoreWebView2DownloadState.Completed)
                 {
+                    // Een mailconcept uit de checklist: rechtstreeks in Outlook bij Concepten zetten
+                    if (vanWerkplek && pad.EndsWith(".eml", StringComparison.OrdinalIgnoreCase) && ZetInConcepten(pad))
+                    {
+                        RefreshClips();
+                        return;
+                    }
                     clip.Visible = true;
                     StyleClipButton();
                 }
@@ -1856,6 +1864,112 @@ class MainForm : Form
     }
 
     // ---------- instellingen ----------
+    // ---------- mailconcept (.eml uit de checklist) in Outlook bij Concepten zetten ----------
+    // Werkt met de klassieke Outlook voor Windows; het concept staat daarna ook in Outlook op het web.
+    bool ZetInConcepten(string emlPad)
+    {
+        Type olType = null;
+        try { olType = Type.GetTypeFromProgID("Outlook.Application"); } catch { }
+        if (olType == null)
+        {
+            ToonMelding("Er is geen klassieke Outlook op deze computer gevonden, dus het concept staat hier op het klembord. Klik op Open om het te openen.");
+            return false;
+        }
+        string tmp = Path.Combine(Path.GetTempPath(), "hartwerkplek_mail_" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            string tekst = File.ReadAllText(emlPad, Encoding.ASCII);
+            int kopEind = tekst.IndexOf("\r\n\r\n");
+            string kop = kopEind > 0 ? tekst.Substring(0, kopEind) : "";
+            string aan = KopWaarde(kop, "To");
+            string onderwerp = DecodeerKop(KopWaarde(kop, "Subject"));
+
+            string html = null, platteTekst = null;
+            byte[] logo = null; string logoCid = null;
+            List<KeyValuePair<string, byte[]>> bijlagen = new List<KeyValuePair<string, byte[]>>();
+            foreach (string deel in Regex.Split(tekst, @"\r\n--=_[A-Za-z]+_[A-Za-z0-9]+(?:--)?\r\n"))
+            {
+                int k = deel.IndexOf("\r\n\r\n");
+                if (k < 0) continue;
+                string dk = deel.Substring(0, k), lijf = deel.Substring(k + 4);
+                string ct = KopWaarde(dk, "Content-Type").ToLowerInvariant();
+                if (ct.Length == 0 || ct.StartsWith("multipart/")) continue;
+                byte[] data;
+                if (KopWaarde(dk, "Content-Transfer-Encoding").ToLowerInvariant().Contains("base64"))
+                {
+                    string b64 = Regex.Replace(lijf, @"\s+", "");
+                    int eind = b64.IndexOf("--"); if (eind >= 0) b64 = b64.Substring(0, eind);
+                    data = Convert.FromBase64String(b64);
+                }
+                else data = Encoding.UTF8.GetBytes(lijf);
+
+                if (ct.StartsWith("text/html")) html = Encoding.UTF8.GetString(data);
+                else if (ct.StartsWith("text/plain")) platteTekst = Encoding.UTF8.GetString(data);
+                else
+                {
+                    string cid = KopWaarde(dk, "Content-ID").Trim('<', '>', ' ');
+                    if (cid.Length > 0 && ct.StartsWith("image/")) { logo = data; logoCid = cid; continue; }
+                    string naam = null;
+                    Match m = Regex.Match(dk, @"filename\*=UTF-8''([^\s;]+)", RegexOptions.IgnoreCase);
+                    if (m.Success) naam = Uri.UnescapeDataString(m.Groups[1].Value);
+                    if (naam == null) { m = Regex.Match(dk, "filename=\"([^\"]+)\"", RegexOptions.IgnoreCase); if (m.Success) naam = m.Groups[1].Value; }
+                    if (naam == null) naam = "bijlage";
+                    foreach (char c in Path.GetInvalidFileNameChars()) naam = naam.Replace(c, '-');
+                    bijlagen.Add(new KeyValuePair<string, byte[]>(naam, data));
+                }
+            }
+
+            Directory.CreateDirectory(tmp);
+            dynamic ol = Activator.CreateInstance(olType);
+            dynamic mail = ol.CreateItem(0);
+            mail.To = aan;
+            mail.Subject = onderwerp;
+            if (logo != null && html != null)
+            {
+                string lp = Path.Combine(tmp, "logo.png");
+                File.WriteAllBytes(lp, logo);
+                dynamic la = mail.Attachments.Add(lp, 1, 0);
+                la.PropertyAccessor.SetProperty("http://schemas.microsoft.com/mapi/proptag/0x3712001F", logoCid);
+            }
+            if (html != null) mail.HTMLBody = html;
+            else if (platteTekst != null) mail.Body = platteTekst;
+            foreach (KeyValuePair<string, byte[]> b in bijlagen)
+            {
+                string bp = Path.Combine(tmp, b.Key);
+                File.WriteAllBytes(bp, b.Value);
+                mail.Attachments.Add(bp);
+            }
+            mail.Save();
+            try { Marshal.ReleaseComObject(mail); Marshal.ReleaseComObject(ol); } catch { }
+            try { File.Delete(emlPad); } catch { }
+            ToonMelding("Het mailconcept staat in Outlook bij Concepten" + (string.IsNullOrEmpty(aan) ? " (vul daar nog het e-mailadres in)." : "."));
+            return true;
+        }
+        catch (Exception ex)
+        {
+            ToonMelding("Het concept in Outlook zetten lukte niet (" + ex.Message + "). Het staat hier op het klembord; klik op Open.");
+            return false;
+        }
+        finally
+        {
+            try { if (Directory.Exists(tmp)) Directory.Delete(tmp, true); } catch { }
+        }
+    }
+
+    static string KopWaarde(string kop, string naam)
+    {
+        Match m = Regex.Match(kop, "^" + Regex.Escape(naam) + @":[ \t]*(.*(?:\r\n[ \t].*)*)", RegexOptions.Multiline | RegexOptions.IgnoreCase);
+        return m.Success ? Regex.Replace(m.Groups[1].Value, @"\r\n[ \t]+", " ").Trim() : "";
+    }
+
+    static string DecodeerKop(string v)
+    {
+        return Regex.Replace(v, @"=\?UTF-8\?B\?([A-Za-z0-9+/=]+)\?=", delegate(Match m)
+        {
+            try { return Encoding.UTF8.GetString(Convert.FromBase64String(m.Groups[1].Value)); } catch { return m.Value; }
+        }, RegexOptions.IgnoreCase);
+    }
+
     // ---------- sessieblad: de pagina als pdf op het klembord zetten ----------
     async void PrintSheet(CoreWebView2 core, double widthInch, double heightInch, string name)
     {

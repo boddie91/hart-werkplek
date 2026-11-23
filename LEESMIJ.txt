@@ -88,3 +88,6 @@ Versie 17
 
 Versie 18
 - reMarkable naar pdf: begint nu bij de eerste pagina en scrolt rustiger door het hele document, zodat alle pagina's meekomen.
+
+Versie 19
+- Checklist: "Open in mailprogramma" zet het mailconcept (met bijlage en handtekening) rechtstreeks in Outlook bij Concepten, als op deze computer de klassieke Outlook staat. Anders komt het zoals voorheen op het klembord.

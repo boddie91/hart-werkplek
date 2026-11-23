@@ -66,7 +66,7 @@ $csc = Join-Path $env:WINDIR 'Microsoft.NET\Framework64\v4.0.30319\csc.exe'
 if (-not (Test-Path $csc)) { Fout "de Windows-compiler (csc.exe) is niet gevonden." }
 $exe = Join-Path $doel 'HartWerkplek.exe'
 $out = & $csc /nologo /target:winexe /platform:x64 /codepage:65001 "/win32icon:$(Join-Path $doel 'hartwerkplek.ico')" /optimize+ "/out:$exe" `
-    /r:System.Windows.Forms.dll /r:System.Drawing.dll `
+    /r:System.Windows.Forms.dll /r:System.Drawing.dll /r:System.Core.dll /r:Microsoft.CSharp.dll `
     "/r:$(Join-Path $doel 'Microsoft.Web.WebView2.Core.dll')" `
     "/r:$(Join-Path $doel 'Microsoft.Web.WebView2.WinForms.dll')" `
     (Join-Path $doel 'Werkplek.cs') 2>&1
