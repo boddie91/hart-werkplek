@@ -43,8 +43,9 @@ class Tab
     public WebView2 View;
     public Task Ready;
     public bool Fixed;              // eigen pagina van het programma, niet instelbaar
-    public Control Host;            // wat getoond/verborgen wordt (browser of gesplitst scherm)
-    public SplitContainer Split;    // alleen bij tabbladen met een zijvenster
+    public Control Host;            // wat getoond/verborgen wordt (de browser)
+    public bool HasPane;            // vensters die deze pagina opent komen ernaast (James)
+    public Panel PaneHost;          // het venster ernaast, met eigen tabbladen
     public FlowLayoutPanel Strip;
     public Panel PaneBody;
     public List<PaneTab> Pane = new List<PaneTab>();
@@ -73,7 +74,7 @@ class MainForm : Form
     readonly string clipDir;
     readonly string cfgPath;
     readonly float k; // schaal t.o.v. 100%
-    int versie;
+    string versie = "0";
     Button btnUpdate;
     const string VersieUrl = "https://raw.githubusercontent.com/boddie91/hart-werkplek/main/bron/versie.txt";
 
@@ -84,13 +85,16 @@ class MainForm : Form
     CoreWebView2Environment env;
     Panel side;
     Panel content;
+    Panel viewport;                 // zichtbaar deel van de werkstrook
+    Panel strook;                   // werkstrook: pagina + zijvensters naast elkaar
+    HScrollBar schuif;
+    bool bezigMetIndeling;
     Panel clip;
     FlowLayoutPanel clipList;
     Button btnFull;
     Button btnClip;
     Button btnVerslag;
     Panel verslag;
-    Splitter verslagSplit;
     WebView2 verslagView;
     Tab current;
     bool isFull;
@@ -123,7 +127,7 @@ class MainForm : Form
         dataDir = Path.Combine(appDir, "gegevens");
         clipDir = Path.Combine(appDir, "klembord");
         cfgPath = Path.Combine(appDir, "instellingen.txt");
-        try { int.TryParse(File.ReadAllText(Path.Combine(appDir, "versie.txt")).Trim(), out versie); } catch { }
+        try { versie = File.ReadAllText(Path.Combine(appDir, "versie.txt")).Trim(); } catch { }
 
         using (Graphics g = CreateGraphics()) k = g.DpiX / 96f;
 
@@ -143,6 +147,7 @@ class MainForm : Form
         BuildTabs();
         BuildUi();
         RefreshClips();
+        Shown += delegate { Indeling(); };
     }
 
     int S(int px) { return (int)Math.Round(px * k); }
@@ -216,6 +221,23 @@ class MainForm : Form
         content.Dock = DockStyle.Fill;
         content.BackColor = Bg;
         Controls.Add(content);
+
+        // zijvensters versmallen de pagina niet: ze komen ernaast en je schuift horizontaal
+        viewport = new Panel();
+        viewport.Dock = DockStyle.Fill;
+        viewport.BackColor = Bg;
+        content.Controls.Add(viewport);
+        schuif = new HScrollBar();
+        schuif.Dock = DockStyle.Bottom;
+        schuif.Height = SystemInformation.HorizontalScrollBarHeight;
+        schuif.Visible = false;
+        schuif.ValueChanged += delegate { if (strook != null) strook.Left = -schuif.Value; };
+        content.Controls.Add(schuif);
+        strook = new Panel();
+        strook.BackColor = Line;
+        strook.Location = new Point(0, 0);
+        viewport.Controls.Add(strook);
+        viewport.Resize += delegate { Indeling(); };
 
         BuildVerslagPanel();
         BuildClipPanel();
@@ -424,13 +446,12 @@ class MainForm : Form
     async Task CreateView(Tab t)
     {
         WebView2 v = new WebView2();
-        v.Dock = DockStyle.Fill;
         v.DefaultBackgroundColor = Color.White;
         t.View = v;
-        if (t.Key == "james") BuildSplit(t, v);
-        else t.Host = v;
+        t.Host = v;
+        if (t.Key == "james") BuildPane(t);
         t.Host.Visible = false;
-        content.Controls.Add(t.Host);
+        strook.Controls.Add(t.Host);
         await v.EnsureCoreWebView2Async(env);
         Setup(v.CoreWebView2, t);
         if (t.Key == "outlook")
@@ -465,14 +486,15 @@ class MainForm : Form
         try { await EnsureView(t); } catch { return; }
         if (current != t) return;
         t.Host.Visible = true;
-        t.Host.BringToFront();
+        Indeling();
+        if (t.PaneHost == null || t.Pane.Count == 0) ToonDeel(t.Host);
         t.View.Focus();
     }
 
     void Setup(CoreWebView2 core, Tab owner)
     {
         core.SetVirtualHostNameToFolderMapping("werkplek.local", webDir, CoreWebView2HostResourceAccessKind.Allow);
-        if (owner != null && owner.Split != null)
+        if (owner != null && owner.HasPane)
             core.NewWindowRequested += delegate(object s, CoreWebView2NewWindowRequestedEventArgs e) { OpenInPane(owner, e); };
         else
             core.NewWindowRequested += OnNewWindow;
@@ -596,21 +618,16 @@ class MainForm : Form
         }
     }
 
-    // ---------- gesplitst scherm: vensters van James openen ernaast, met tabbladen ----------
-    void BuildSplit(Tab t, WebView2 main)
+    // ---------- zijvenster: vensters van James openen naast de pagina, met tabbladen ----------
+    void BuildPane(Tab t)
     {
-        SplitContainer sc = new SplitContainer();
-        sc.Dock = DockStyle.Fill;
-        sc.SplitterWidth = S(6);
-        sc.BackColor = Line;
-        sc.Panel1.BackColor = Color.White;
-        sc.Panel2.BackColor = Color.White;
-        sc.Panel1.Controls.Add(main);
-        sc.Panel2Collapsed = true;
+        Panel host = new Panel();
+        host.BackColor = Color.White;
+        host.Visible = false;
 
         Panel body = new Panel();
         body.Dock = DockStyle.Fill;
-        sc.Panel2.Controls.Add(body);
+        host.Controls.Add(body);
 
         FlowLayoutPanel strip = new FlowLayoutPanel();
         strip.Dock = DockStyle.Top;
@@ -618,12 +635,100 @@ class MainForm : Form
         strip.WrapContents = false;
         strip.BackColor = Chip;
         strip.Padding = new Padding(S(6), S(5), S(6), 0);
-        sc.Panel2.Controls.Add(strip);
+        host.Controls.Add(strip);
 
-        t.Split = sc;
+        strook.Controls.Add(host);
+        t.HasPane = true;
+        t.PaneHost = host;
         t.Strip = strip;
         t.PaneBody = body;
-        t.Host = sc;
+    }
+
+    // versies als 19, 19.4 of 19.4.1 vergelijken (per deel als getal)
+    static int VergelijkVersie(string a, string b)
+    {
+        string[] x = (a ?? "0").Split('.');
+        string[] y = (b ?? "0").Split('.');
+        for (int i = 0; i < Math.Max(x.Length, y.Length); i++)
+        {
+            int p = 0, q = 0;
+            if (i < x.Length) int.TryParse(x[i].Trim(), out p);
+            if (i < y.Length) int.TryParse(y[i].Trim(), out q);
+            if (p != q) return p < q ? -1 : 1;
+        }
+        return 0;
+    }
+
+    // ---------- werkstrook indelen: pagina op volle breedte, zijvensters rechts ernaast ----------
+    void Indeling()
+    {
+        if (bezigMetIndeling || strook == null) return;
+        bezigMetIndeling = true;
+        try
+        {
+            int vw = Math.Max(S(200), viewport.ClientSize.Width);
+            List<Control> rij = new List<Control>();
+            List<int> breed = new List<int>();
+            if (current != null && current.Host != null && current.Host.Visible) { rij.Add(current.Host); breed.Add(vw); }
+            foreach (Tab x in order)
+            {
+                if (x.PaneHost == null) continue;
+                bool zien = x == current && x.Pane.Count > 0;
+                x.PaneHost.Visible = zien;
+                if (zien) { rij.Add(x.PaneHost); breed.Add(Math.Max(S(520), vw * 55 / 100)); }
+            }
+            if (verslag != null && verslag.Visible) { rij.Add(verslag); breed.Add(S(460)); }
+            if (clip != null && clip.Visible) { rij.Add(clip); breed.Add(S(280)); }
+
+            int gap = rij.Count > 1 ? 1 : 0;
+            int totaal = 0;
+            for (int i = 0; i < breed.Count; i++) totaal += breed[i] + (i > 0 ? gap : 0);
+            if (totaal < vw) totaal = vw;
+
+            bool nodig = totaal > vw;
+            if (schuif.Visible != nodig) schuif.Visible = nodig;
+            int h = viewport.ClientSize.Height;
+            vw = Math.Max(S(200), viewport.ClientSize.Width);
+            if (breed.Count > 0 && rij[0] == (current != null ? current.Host : null)) breed[0] = vw;
+            totaal = 0;
+            for (int i = 0; i < breed.Count; i++) totaal += breed[i] + (i > 0 ? gap : 0);
+            if (totaal < vw) totaal = vw;
+
+            int xpos = 0;
+            for (int i = 0; i < rij.Count; i++)
+            {
+                if (i > 0) xpos += gap;
+                rij[i].Dock = DockStyle.None;
+                rij[i].Bounds = new Rectangle(xpos, 0, breed[i], h);
+                xpos += breed[i];
+            }
+            strook.Size = new Size(totaal, h);
+
+            if (nodig)
+            {
+                schuif.Minimum = 0;
+                schuif.LargeChange = vw;
+                schuif.SmallChange = S(80);
+                schuif.Maximum = totaal - 1;
+                int max = totaal - vw;
+                if (schuif.Value > max) schuif.Value = max;
+            }
+            else if (schuif.Value != 0) schuif.Value = 0;
+            strook.Left = -schuif.Value;
+        }
+        finally { bezigMetIndeling = false; }
+    }
+
+    // schuif zo dat dit deel helemaal in beeld is
+    void ToonDeel(Control c)
+    {
+        if (c == null || !schuif.Visible) return;
+        int vw = viewport.ClientSize.Width;
+        int max = Math.Max(0, strook.Width - vw);
+        int v = schuif.Value;
+        if (c.Right > v + vw) v = c.Right - vw;
+        if (c.Left < v) v = c.Left;
+        schuif.Value = Math.Max(0, Math.Min(max, v));
     }
 
     async void OpenInPane(Tab t, CoreWebView2NewWindowRequestedEventArgs e)
@@ -700,12 +805,8 @@ class MainForm : Form
 
         t.Strip.Controls.Add(chip);
         t.Pane.Add(pt);
-        if (first)
-        {
-            t.Split.Panel2Collapsed = false;
-            try { t.Split.SplitterDistance = t.Split.Width / 2; } catch { }
-        }
         SelectPaneTab(t, pt);
+        if (first) { Indeling(); ToonDeel(t.PaneHost); }
         return pt;
     }
 
@@ -730,7 +831,7 @@ class MainForm : Form
         t.PaneBody.Controls.Remove(pt.View);
         try { pt.View.Dispose(); } catch { }
         pt.Chip.Dispose();
-        if (t.Pane.Count == 0) t.Split.Panel2Collapsed = true;
+        if (t.Pane.Count == 0) Indeling();
         else SelectPaneTab(t, t.Pane[t.Pane.Count - 1]);
     }
 
@@ -811,26 +912,18 @@ class MainForm : Form
     // ---------- sessieverslag: paneel dat naast elk tabblad open kan ----------
     void BuildVerslagPanel()
     {
-        verslagSplit = new Splitter();
-        verslagSplit.Dock = DockStyle.Right;
-        verslagSplit.Width = S(6);
-        verslagSplit.BackColor = Line;
-        verslagSplit.Visible = false;
-        Controls.Add(verslagSplit);
-
         verslag = new Panel();
-        verslag.Dock = DockStyle.Right;
         verslag.Width = S(460);
         verslag.BackColor = Color.White;
         verslag.Visible = false;
-        Controls.Add(verslag);
+        verslag.VisibleChanged += delegate { Indeling(); if (verslag.Visible) ToonDeel(verslag); };
+        strook.Controls.Add(verslag);
     }
 
     async void ShowVerslag(bool on)
     {
         if (env == null) return;
         verslag.Visible = on;
-        verslagSplit.Visible = on;
         btnVerslag.BackColor = on ? AccentSoft : Color.White;
         btnVerslag.ForeColor = on ? Accent : Ink;
         if (!on || verslagView != null) return;
@@ -852,7 +945,6 @@ class MainForm : Form
     void BuildClipPanel()
     {
         clip = new Panel();
-        clip.Dock = DockStyle.Right;
         clip.Width = S(280);
         clip.BackColor = Color.White;
         clip.Visible = false;
@@ -863,7 +955,8 @@ class MainForm : Form
         };
         clip.DragEnter += ClipDragEnter;
         clip.DragDrop += ClipDragDrop;
-        Controls.Add(clip);
+        clip.VisibleChanged += delegate { Indeling(); if (clip.Visible) ToonDeel(clip); };
+        strook.Controls.Add(clip);
 
         clipList = new FlowLayoutPanel();
         clipList.Dock = DockStyle.Fill;
@@ -2006,7 +2099,7 @@ class MainForm : Form
     // ---------- bijwerken vanaf GitHub ----------
     async void ZoekUpdate()
     {
-        int nieuw = 0;
+        string nieuw = "0";
         try
         {
             string t = await Task.Run(delegate
@@ -2018,10 +2111,10 @@ class MainForm : Form
                     return wc.DownloadString(VersieUrl + "?t=" + DateTime.Now.Ticks);
                 }
             });
-            int.TryParse(t.Trim(), out nieuw);
+            nieuw = t.Trim();
         }
         catch { return; }
-        if (nieuw > versie)
+        if (VergelijkVersie(nieuw, versie) > 0)
         {
             btnUpdate.ForeColor = Color.White;
             btnUpdate.BackColor = Accent;
