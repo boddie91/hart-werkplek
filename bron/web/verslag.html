@@ -31,6 +31,19 @@ details summary{cursor:pointer;font-weight:700;color:var(--accent)}
 details ul{margin:6px 0 2px;padding-left:18px}
 .stijl{display:flex;gap:6px;align-items:center;font-size:13px;color:var(--muted)}
 .stijl select{width:auto;padding:4px 8px}
+.hulp{margin:4px 0 2px;font-size:12.5px;background:none;padding:0;border-radius:0}
+.hulp>summary{cursor:pointer;color:var(--accent);font-weight:600;list-style:none;display:inline-block;padding:2px 0}
+.hulp>summary::before{content:"＋ "}
+.hulp[open]>summary::before{content:"－ "}
+.hulpbody{background:#faf7f8;border:1px solid #efdde3;border-radius:10px;padding:10px 12px;margin-top:4px;line-height:1.45}
+.hulpbody .wat{color:var(--ink);margin-bottom:8px}
+.hulpbody h4{margin:10px 0 5px;font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.starter{font:inherit;font-size:12.5px;border:1px solid var(--line);background:#fff;border-radius:16px;padding:3px 10px;margin:0 5px 5px 0;cursor:pointer;color:var(--ink)}
+.starter:hover{border-color:var(--accent);color:var(--accent)}
+.vt{width:100%;border-collapse:collapse}
+.vt td{padding:4px 6px;border-top:1px solid #efdde3;vertical-align:top}
+.vt td:first-child{color:var(--muted);width:52%}
+.vt td:last-child button{font:inherit;font-size:12.5px;border:0;background:none;color:var(--accent);cursor:pointer;padding:0;text-align:left;text-decoration:underline dotted}
 </style>
 </head>
 <body>
@@ -280,6 +293,55 @@ function kopieer(){
     $('ok').textContent='Druk op Ctrl+C';
   });
 }
+// ---------- schrijfhulp per vak: wat hoort hier, zinsbegins, gewone woorden -> vaktaal ----------
+const HULP={
+ terug:{wat:'Wat de cliënt zelf vertelt over de afgelopen periode. Schrijf het op zoals zij het zegt, zo concreet mogelijk: hoe vaak, wanneer, in welke situatie.',
+  st:['Ze vertelt dat ','Het lukte haar om ','Het lukte nog niet om … omdat ','Ze merkt verschil in ','Ze heeft … keer ','Een moeilijk moment was '],
+  vt:[['het ging wel oké','het gaat volgens haar iets beter / wisselend'],['ze sliep slecht','ze slaapt slecht: moeite met in- of doorslapen'],['ze had het huiswerk niet gedaan omdat ze er tegenop zag','het huiswerk is niet uitgevoerd vanwege vermijding'],['ze deed het wel, maar alleen de makkelijke stukken','het huiswerk is deels uitgevoerd']]},
+ indrukT:{wat:'Wat jij ziet en hoort, nog zonder uitleg. Denk aan: hoe ze erbij zit, hoe ze praat, wat ze laat zien aan gevoel, hoe het contact is. Jouw uitleg komt pas bij Beschouwing.',
+  st:['Ze kwam … over. ','Opvallend was dat ','Bij het onderwerp … werd ze ','Het contact was '],
+  vt:[['ze huilde toen het over haar werk ging','emotioneel, tranen bij het onderwerp werk'],['ze praatte heel snel en sprong van de hak op de tak','gejaagde spraak, wat chaotisch in het vertellen'],['ze zei weinig en keek me nauwelijks aan','teruggetrokken, weinig spontane spraak, weinig oogcontact'],['ze lachte terwijl het verhaal verdrietig was','affect paste niet bij de inhoud (incongruent affect)'],['ze bleef maar wiebelen en friemelen','motorisch onrustig'],['ze leek nergens echt iets bij te voelen','vlak affect'],['je kon goed met haar praten','goed contact, open houding'],['ze reageerde wat geïrriteerd op mijn vragen','prikkelbaar, wat afwerend in het contact']]},
+ thema:{wat:'Waar het vooral over ging en waarom dat nu speelde. Eén hoofdonderwerp is genoeg. Laat het gespreksverloop weg.',
+  st:['Aanleiding was ','Ze bracht zelf in dat ','Dit speelt nu omdat ','Het onderwerp hangt samen met het behandeldoel, omdat '],
+  vt:[['we hebben het over van alles gehad','er zijn meerdere actuele onderwerpen besproken, met als rode draad …'],['ze zag op tegen een gesprek','ze heeft anticipatieangst voor het gesprek met …'],['ze maakt zich overal zorgen over','ze piekert veel, vooral over …']]},
+ intv:{wat:'Wat jíj deed in de sessie. Noem de methode bij naam en zeg in één zin waarop je hem toepaste. Hieronder staat wat je deed in gewone woorden, met de naam die erbij hoort.',
+  st:['Er is psycho-educatie gegeven over ','Met het G-schema is de situatie … uitgewerkt. ','De gedachte "…" is uitgedaagd. ','Samen is een helpende gedachte geformuleerd: "…". ','In een rollenspel is geoefend met ','Er is een activiteitenplanning gemaakt voor '],
+  vt:[['ik heb uitgelegd hoe stress, piekeren of slaap werkt','psycho-educatie over …'],['we hebben situatie, gedachte, gevoel en gedrag op een rij gezet','G-schema'],['we keken of haar gedachte wel klopte en zochten een andere','cognitieve herstructurering (gedachte uitgedaagd, alternatieve gedachte geformuleerd)'],['we hebben plannen gemaakt om weer leuke of nuttige dingen te doen','gedragsactivatie (activiteitenplanning)'],['ze gaat stap voor stap doen waar ze tegen opziet','graduele exposure'],['we hebben gekeken wat echt belangrijk voor haar is','waardenverheldering (ACT)'],['ze leerde gedachten te zien als gedachten, niet als feiten','defusie (ACT)'],['we hebben een probleem opgeknipt en oplossingen bedacht','probleemoplossende vaardigheden'],['we hebben geoefend hoe ze nee zegt','assertiviteitstraining, rollenspel'],['ik heb vooral geluisterd en ruimte gegeven voor haar verdriet','ruimte geboden aan emoties, steunend en validerend'],['ik vroeg door naar een concreet voorbeeld','concretiseren'],['ik gaf terug wat ik hoorde','samenvatten en reflecteren'],['ze vertelde zelf waarom ze wil veranderen','motiverende gespreksvoering (verandertaal uitgelokt)'],['we hebben besproken wat ze doet als het weer slechter gaat','terugvalpreventie, signaleringsplan'],['we hebben gekeken wat er al bereikt is','evaluatie van de behandeldoelen']]},
+ reactie:{wat:'Wat het bij de cliënt opleverde. Eén letterlijke uitspraak tussen aanhalingstekens zegt vaak het meest.',
+  st:['Ze herkende ','Ze gaf aan dat het haar … opleverde. ','Ze vond het lastig om ','Ze kon … goed toepassen. ','Ze zei: "'],
+  vt:[['ze snapte het ineens','ze kreeg inzicht in …'],['ze vond het onzin','ze stond nog sceptisch tegenover …'],['het raakte haar','het onderwerp riep veel emotie op'],['ze ging er meteen mee aan de slag','ze is gemotiveerd om … te oefenen']]},
+ voortgangT:{wat:'Waaraan je de voortgang ziet. Maak het meetbaar: hoe vaak, hoeveel, ten opzichte van de intake of de vorige sessie.',
+  st:['Dit blijkt uit ','Ten opzichte van de intake ','Ze slaapt nu … van de 7 nachten door. ','Ze werkt nu … uur. '],
+  vt:[['het gaat beter maar het is nog wankel','voorzichtige vooruitgang, nog niet stabiel'],['er gebeurt eigenlijk niks','het beeld is stabiel; er is nog geen verandering op het doel'],['het ging even goed, nu weer slechter','terugval na een periode van verbetering']]},
+ besch:{wat:'Jouw eigen gedachten, maar geordend. Beantwoord drie vragen, elk in één of twee zinnen. 1) Wat begrijp ik nu beter? 2) Wat houdt de klacht in stand? 3) Wat betekent dat voor de behandeling? Twijfel mag: schrijf dan "werkhypothese".',
+  st:['Mijn indruk is dat ','Het lijkt erop dat ','De klachten worden mogelijk in stand gehouden door ','Werkhypothese: ','Dit wordt de komende sessies verder verkend. ','Daarom ligt de focus de komende sessies op ','Het plan blijft ongewijzigd. ','Overweging is om '],
+  vt:[['ze gaat dingen uit de weg','vermijdingsgedrag'],['ze doet alles voor iedereen','moeite met grenzen aangeven, sterk verantwoordelijkheidsgevoel'],['ze is heel streng voor zichzelf','hoge eisen aan zichzelf'],['ze rust nooit echt uit','onvoldoende herstelmomenten'],['ze denkt meteen het ergste','catastroferen'],['ze blijft maar malen over dingen','piekeren / rumineren'],['ik weet nog niet goed wat er speelt','werkhypothese: …; dit wordt verder verkend'],['ik denk dat dit meer nodig heeft dan wij bieden','overweging: verwijzing naar de specialistische ggz bespreken'],['ze doet goed mee, het loopt','ze is gemotiveerd en profiteert van de behandeling']]},
+ afspraken:{wat:'Wat de cliënt tot de volgende keer gaat doen. Zo concreet dat ze het zelf kan nalezen.',
+  st:['Ze gaat ','Afgesproken is dat ','Huiswerk: ','Ze houdt bij hoe vaak '],vt:[]},
+ plan:{wat:'Waar je volgende keer mee verdergaat. Verbind het met het huiswerk en het behandeldoel.',
+  st:['Volgende sessie wordt het huiswerk geëvalueerd en ','Verder werken aan ','Voorbereiden van ','Na sessie … volgt een evaluatie van de behandeldoelen. '],vt:[]}
+};
+function voegIn(el,tekst){
+  el.focus();
+  const a=el.selectionStart??el.value.length, b=el.selectionEnd??el.value.length;
+  const voor=el.value.slice(0,a), na=el.value.slice(b);
+  const tus=(voor && !/\s$/.test(voor))?' ':'';
+  el.value=voor+tus+tekst+na;
+  const pos=(voor+tus+tekst).length; el.setSelectionRange(pos,pos);
+  maak();
+}
+Object.entries(HULP).forEach(([id,h])=>{
+  const el=$(id); if(!el) return;
+  const d=document.createElement('details'); d.className='hulp';
+  let html='<summary>Hulp bij schrijven</summary><div class="hulpbody"><div class="wat">'+h.wat+'</div>';
+  if(h.st.length) html+='<h4>Begin je zin met (klik om in te voegen)</h4><div>'+h.st.map((t,i)=>'<button type="button" class="starter" data-st="'+i+'">'+t.replace(/</g,'&lt;')+'</button>').join('')+'</div>';
+  if(h.vt.length) html+='<h4>Zo schrijf je het (klik op de vakterm om in te voegen)</h4><table class="vt">'+h.vt.map(([g,v],i)=>'<tr><td>'+g+'</td><td><button type="button" data-vt="'+i+'">'+v+'</button></td></tr>').join('')+'</table>';
+  d.innerHTML=html+'</div>';
+  d.querySelectorAll('[data-st]').forEach(b=>b.onclick=()=>voegIn(el,h.st[+b.dataset.st]));
+  d.querySelectorAll('[data-vt]').forEach(b=>b.onclick=()=>voegIn(el,h.vt[+b.dataset.vt][1]));
+  el.insertAdjacentElement('afterend',d);
+});
+
 maak();
 </script>
 </body>
