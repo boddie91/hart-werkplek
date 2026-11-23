@@ -91,3 +91,11 @@ Versie 18
 
 Versie 19
 - Checklist: "Open in mailprogramma" zet het mailconcept (met bijlage en handtekening) rechtstreeks in Outlook bij Concepten, als op deze computer de klassieke Outlook staat. Anders komt het zoals voorheen op het klembord.
+
+Versie 20
+- Zijvensters (klembord, sessieverslag, vensters van James) maken je pagina niet meer smaller: ze komen ernaast en je schuift met de balk onderin.
+- Het menu links is ingedeeld met kopjes. Het klembord heeft een sluitknop.
+- Sessieverslag vernieuwd: keuzes worden hele zinnen, nieuwe vakken voor indruk, veiligheid en beschouwing, en onder elk vak 'Hulp bij schrijven' met zinsbegins en vaktermen.
+- Startpagina vernieuwd: getallen in één oogopslag, tegels vrij neerzetten (ook met lege plekken) via 'Indeling aanpassen'.
+- Het aanmeldpaneel staat rechts op de startpagina als eigen browser. Kies daar eventueel één keer opnieuw je Excel-bestand.
+- Versienummers mogen voortaan ook 20.1, 20.2 enz. zijn.
