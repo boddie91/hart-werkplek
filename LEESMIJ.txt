@@ -70,3 +70,6 @@ Versie 11
 
 Versie 12
 - Klok en datum linksboven in het menu, ook als het programma schermvullend is.
+
+Versie 13
+- Bijwerken, Instellingen, Venster en Afsluiten zijn icoontjes naast elkaar onderin het menu (wijs ze aan voor de naam). Is er een nieuwe versie, dan kleurt het Bijwerken-icoon rood.

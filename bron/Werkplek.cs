@@ -230,26 +230,31 @@ class MainForm : Form
         };
         Controls.Add(side);
 
-        // onderkant: wat het laatst wordt toegevoegd, komt het verst onderaan
-        btnUpdate = SideButton("Bijwerken");
-        btnUpdate.Dock = DockStyle.Bottom;
+        // onderkant: vier icoonknoppen naast elkaar
+        tips = new ToolTip();
+        TableLayoutPanel onder = new TableLayoutPanel();
+        onder.Dock = DockStyle.Bottom;
+        onder.Height = S(48);
+        onder.ColumnCount = 4;
+        onder.RowCount = 1;
+        for (int c = 0; c < 4; c++) onder.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25f));
+        onder.RowStyles.Add(new RowStyle(SizeType.Percent, 100f));
+        onder.Margin = new Padding(0);
+        onder.Padding = new Padding(0, S(6), 0, 0);
+
+        btnUpdate = IconButton("\uE72C", "Bijwerken");
         btnUpdate.Click += delegate { Bijwerken(); };
-        side.Controls.Add(btnUpdate);
-
-        Button btnCfg = SideButton("Instellingen");
-        btnCfg.Dock = DockStyle.Bottom;
+        Button btnCfg = IconButton("\uE713", "Instellingen");
         btnCfg.Click += delegate { OpenSettings(); };
-        side.Controls.Add(btnCfg);
-
-        btnFull = SideButton("Venster  (F11)");
-        btnFull.Dock = DockStyle.Bottom;
+        btnFull = IconButton("\uE73F", "Venster (F11)");
         btnFull.Click += delegate { SetFull(!isFull); };
-        side.Controls.Add(btnFull);
-
-        Button btnExit = SideButton("Afsluiten");
-        btnExit.Dock = DockStyle.Bottom;
+        Button btnExit = IconButton("\uE7E8", "Afsluiten");
         btnExit.Click += delegate { Close(); };
-        side.Controls.Add(btnExit);
+        onder.Controls.Add(btnUpdate, 0, 0);
+        onder.Controls.Add(btnCfg, 1, 0);
+        onder.Controls.Add(btnFull, 2, 0);
+        onder.Controls.Add(btnExit, 3, 0);
+        side.Controls.Add(onder);
 
         // klembord-knop direct onder de tabbladen
         btnClip = SideButton("Klembord");
@@ -323,6 +328,27 @@ class MainForm : Form
         side.Controls.Add(title);
     }
 
+    ToolTip tips;
+
+    Button IconButton(string glyph, string tip)
+    {
+        Button b = new Button();
+        b.Text = glyph;
+        b.Font = new Font("Segoe MDL2 Assets", 13f);
+        b.Dock = DockStyle.Fill;
+        b.Margin = new Padding(S(2), 0, S(2), 0);
+        b.FlatStyle = FlatStyle.Flat;
+        b.FlatAppearance.BorderSize = 0;
+        b.FlatAppearance.MouseOverBackColor = Color.FromArgb(244, 245, 248);
+        b.TextAlign = ContentAlignment.MiddleCenter;
+        b.ForeColor = Muted;
+        b.BackColor = Color.White;
+        b.Cursor = Cursors.Hand;
+        b.AccessibleName = tip;
+        tips.SetToolTip(b, tip);
+        return b;
+    }
+
     Button SideButton(string text)
     {
         Button b = new Button();
@@ -369,13 +395,15 @@ class MainForm : Form
             WindowState = FormWindowState.Normal;
             FormBorderStyle = FormBorderStyle.None;
             Bounds = Screen.FromControl(this).Bounds;
-            btnFull.Text = "   Venster  (F11)";
+            btnFull.Text = "\uE73F";
+            tips.SetToolTip(btnFull, "Venster (F11)");
         }
         else
         {
             FormBorderStyle = FormBorderStyle.Sizable;
             WindowState = FormWindowState.Maximized;
-            btnFull.Text = "   Volledig scherm  (F11)";
+            btnFull.Text = "\uE740";
+            tips.SetToolTip(btnFull, "Volledig scherm (F11)");
         }
     }
 
@@ -1251,9 +1279,10 @@ class MainForm : Form
         catch { return; }
         if (nieuw > versie)
         {
-            btnUpdate.Text = "   Bijwerken  (nieuw)";
-            btnUpdate.ForeColor = Accent;
-            btnUpdate.Font = new Font("Segoe UI", 10.5f, FontStyle.Bold);
+            btnUpdate.ForeColor = Color.White;
+            btnUpdate.BackColor = Accent;
+            btnUpdate.FlatAppearance.MouseOverBackColor = Color.FromArgb(150, 45, 76);
+            tips.SetToolTip(btnUpdate, "Bijwerken: er is een nieuwe versie");
         }
     }
 
