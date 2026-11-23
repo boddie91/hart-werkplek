@@ -9,70 +9,123 @@
 body{margin:0;background:#fff;color:var(--ink);font-family:"Segoe UI",system-ui,sans-serif;font-size:14.5px}
 .wrap{padding:16px 16px 28px;max-width:760px;margin:0 auto}
 h1{font-size:19px;margin:0 0 2px}
-.sub{color:var(--muted);font-size:12.5px;margin-bottom:14px;line-height:1.45}
-label{display:block;font-weight:700;margin:14px 0 2px}
+.sub{color:var(--muted);font-size:12.5px;margin-bottom:10px;line-height:1.45}
+h2{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:22px 0 2px;border-top:1px solid var(--line);padding-top:12px}
+label{display:block;font-weight:700;margin:12px 0 2px}
 .q{font-size:12.5px;color:var(--muted);margin-bottom:5px;line-height:1.4}
+.q i{color:#7b8496}
 input,select,textarea{font:inherit;width:100%;border:1px solid var(--line);border-radius:9px;padding:8px 10px;color:var(--ink);background:#fff}
-textarea{min-height:62px;resize:vertical}
+textarea{min-height:58px;resize:vertical}
 .row{display:flex;gap:8px}.row>*{flex:1}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px}
 .chip{font:inherit;font-size:13px;border:1px solid var(--line);background:#fff;border-radius:20px;padding:5px 11px;cursor:pointer;color:var(--ink)}
 .chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
 button.act{font:inherit;min-height:42px;padding:0 16px;border-radius:10px;border:1px solid var(--line);background:#fff;color:var(--ink);cursor:pointer}
 button.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700}
-pre{white-space:pre-wrap;word-wrap:break-word;background:var(--chip);border-radius:10px;padding:12px;font:inherit;font-size:13.5px;line-height:1.5;margin:8px 0 10px;min-height:60px}
-.bar{position:sticky;bottom:0;background:#fff;padding:10px 0 0;display:flex;gap:8px;border-top:1px solid var(--line);margin-top:14px}
+button.link{font:inherit;font-size:12.5px;border:0;background:none;color:var(--accent);cursor:pointer;padding:0;text-decoration:underline}
+pre{white-space:pre-wrap;word-wrap:break-word;background:var(--chip);border-radius:10px;padding:12px;font:inherit;font-size:13.5px;line-height:1.55;margin:8px 0 10px;min-height:60px}
+.bar{position:sticky;bottom:0;background:#fff;padding:10px 0 0;display:flex;gap:8px;border-top:1px solid var(--line);margin-top:14px;flex-wrap:wrap}
 .ok{color:var(--ok);font-weight:700;font-size:13px;align-self:center}
+details{background:var(--accent-soft);border-radius:10px;padding:8px 12px;margin:6px 0 4px;font-size:13px;line-height:1.5}
+details summary{cursor:pointer;font-weight:700;color:var(--accent)}
+details ul{margin:6px 0 2px;padding-left:18px}
+.stijl{display:flex;gap:6px;align-items:center;font-size:13px;color:var(--muted)}
+.stijl select{width:auto;padding:4px 8px}
 </style>
 </head>
 <body>
 <div class="wrap">
   <h1>Sessieverslag</h1>
-  <div class="sub">Schrijf wat een collega nodig heeft om het over te nemen, geen gespreksverslag. Steekwoorden zijn genoeg. Inspreken kan met Windows-toets + H. Niets wordt opgeslagen.</div>
+  <div class="sub">Keuzes en knoppen worden vanzelf hele zinnen. In de vrije vakken schrijf je zelf korte, hele zinnen. Inspreken kan met Windows-toets + H. Niets wordt opgeslagen. <button class="link" onclick="voorbeeld()">Voorbeeld invullen</button></div>
+
+  <details>
+    <summary>Schrijftips voor een goed verslag</summary>
+    <ul>
+      <li><b>Koppel aan het behandeldoel.</b> Een lezer moet zien waarom deze sessie bij dit traject hoort.</li>
+      <li><b>Houd waarneming en interpretatie uit elkaar.</b> "Ze werd stil en kreeg tranen toen…" is waarneming. Wat jij ervan denkt, hoort bij Beschouwing.</li>
+      <li><b>Eén letterlijk citaat zegt meer dan een samenvatting.</b> Neem de kernuitspraak van de cliënt op tussen aanhalingstekens.</li>
+      <li><b>Maak voortgang concreet:</b> uren werk, nachten goed geslapen, hoe vaak gepiekerd, een score.</li>
+      <li><b>Beschouwing is jouw vak.</b> Wat begrijp je nu beter? Wat houdt de klacht in stand, wat werkt wel? Moet het plan worden bijgesteld?</li>
+      <li><b>Schrijf alsof de cliënt meeleest</b> (inzagerecht), en zo dat een collega het traject morgen kan overnemen.</li>
+      <li><b>Laat weg</b> wat een waarnemer niet nodig heeft: details over derden, het verloop van het gesprek minuut voor minuut.</li>
+    </ul>
+  </details>
 
   <div class="row">
-    <div><label for="nr" style="margin-top:0">Sessie nr.</label><input id="nr" inputmode="numeric" placeholder="bijv. 4"></div>
-    <div><label for="datum" style="margin-top:0">Datum</label><input id="datum" type="date"></div>
+    <div><label for="nr">Sessie nr.</label><input id="nr" inputmode="numeric" placeholder="bijv. 4"></div>
+    <div><label for="datum">Datum</label><input id="datum" type="date"></div>
+    <div><label for="soort">Vorm</label>
+      <select id="soort"><option value="">Op de praktijk</option><option>videoconsult</option><option>telefonisch consult</option></select></div>
+    <div><label for="wie">Noem cliënt</label>
+      <select id="wie"><option>Cliënt</option><option>Mevrouw</option><option>Meneer</option></select></div>
   </div>
+  <label for="doel">Behandeldoel waaraan gewerkt is</label>
+  <div class="q">Zoals in het behandelplan staat. <i>Bijv.: minder piekeren en weer doorslapen</i></div>
+  <input id="doel">
 
-  <label for="terug">1. Terugblik</label>
-  <div class="q">Hoe ging het sinds de vorige keer? Wat is er met het huiswerk gebeurd?</div>
-  <textarea id="terug"></textarea>
+  <h2>Sinds de vorige keer</h2>
+  <div class="row">
+    <div><label for="gaat">Hoe gaat het?</label>
+      <select id="gaat"><option value="">Kies…</option><option value="beter">Beter</option><option value="wisselend">Wisselend</option><option value="gelijk">Ongeveer hetzelfde</option><option value="zwaarder">Zwaarder</option></select></div>
+    <div><label for="hw">Huiswerk</label>
+      <select id="hw"><option value="">Kies…</option><option value="ja">Uitgevoerd</option><option value="deels">Deels uitgevoerd</option><option value="nee">Niet uitgevoerd</option><option value="geen">Was er niet</option></select></div>
+  </div>
+  <textarea id="terug" placeholder="Wat vertelt de cliënt? Bijv.: Ze heeft vier van de zeven nachten doorgeslapen. Het piekerkwartier lukte op werkdagen, in het weekend niet." style="margin-top:6px"></textarea>
 
-  <label for="thema">2. Besproken</label>
-  <div class="q">Wat was het hoofdonderwerp, en waarom was dat nu belangrijk?</div>
-  <textarea id="thema"></textarea>
+  <h2>In de sessie</h2>
+  <label>Indruk</label>
+  <div class="q">Hoe kwam de cliënt over? Tik aan wat klopt.</div>
+  <div class="chips" id="indruk"></div>
+  <input id="indrukT" placeholder="Opvallend, bijv.: Ze werd stil en kreeg tranen bij het onderwerp werk.">
 
-  <label>3. Interventies</label>
-  <div class="q">Wat heb jij gedaan? Tik aan en licht kort toe.</div>
+  <label for="onderwerp">Centraal stond</label>
+  <div class="q">Het hoofdonderwerp in een paar woorden. <i>Bijv.: het gesprek met haar leidinggevende over uitbreiding van uren</i></div>
+  <input id="onderwerp">
+  <textarea id="thema" placeholder="Waarom speelde het nu, wat vertelde de cliënt? Bijv.: Het gesprek is volgende week. Ze ziet er erg tegenop, omdat ze bang is om nee te zeggen." style="margin-top:6px"></textarea>
+
+  <label>Interventies</label>
+  <div class="q">Tik aan wat je gedaan hebt en licht kort toe.</div>
   <div class="chips" id="chips"></div>
-  <textarea id="intv" placeholder="Toelichting, bijv. welke oefening en bij welk gevoel"></textarea>
+  <textarea id="intv" placeholder="Bijv.: Met het G-schema is de gedachte 'als ik nee zeg, ben ik een slechte collega' onderzocht."></textarea>
 
-  <label for="reactie">4. Reactie cliënt</label>
-  <div class="q">Wat deed het met de cliënt? Wat viel je op?</div>
+  <label for="reactie">Reactie en inzicht cliënt</label>
+  <div class="q">Wat deed het met de cliënt? Een letterlijk citaat werkt goed. <i>Bijv.: Ze herkende de piekercirkel direct: "Zo gaat het elke avond."</i></div>
   <textarea id="reactie"></textarea>
 
-  <label for="voortgang">5. Voortgang op behandeldoelen</label>
+  <h2>Stand van zaken</h2>
+  <div class="row">
+    <div><label for="werk">Werk</label>
+      <select id="werk"><option value="">Niet besproken</option><option value="volledig">Volledig aan het werk</option><option value="gedeeltelijk">Gedeeltelijk aan het werk</option><option value="aangepast">Aangepast werk</option><option value="uitval">Volledig uitgevallen</option></select></div>
+    <div><label for="veilig">Veiligheid</label>
+      <select id="veilig"><option value="">Niet uitgevraagd</option><option value="geen">Uitgevraagd: geen aanwijzingen</option><option value="wel">Uitgevraagd: zie toelichting</option></select></div>
+  </div>
+  <input id="werkT" placeholder="Werk, bijv.: Ze werkt nu 2 x 3 uur. Op 2 december heeft ze een gesprek met de bedrijfsarts." style="margin-top:6px">
+  <input id="veiligT" placeholder="Veiligheid, alleen als het speelde" style="margin-top:6px">
+
+  <label for="voortgang">Voortgang op het behandeldoel</label>
   <select id="voortgang">
     <option value="">Kies…</option>
-    <option>Vooruitgang</option>
-    <option>Stabiel</option>
-    <option>Achteruitgang</option>
-    <option>Nog niet te beoordelen</option>
+    <option value="voor">Vooruitgang</option>
+    <option value="stabiel">Stabiel</option>
+    <option value="achter">Achteruitgang</option>
+    <option value="nog">Nog niet te beoordelen</option>
   </select>
-  <textarea id="voortgangT" placeholder="Waar zie je dat aan?" style="margin-top:6px"></textarea>
+  <input id="voortgangT" placeholder="Waar zie je dat aan? Bijv.: Ze slaapt vaker door en piekert korter." style="margin-top:6px">
 
-  <label for="werk">6. Werk en re-integratie <span style="font-weight:400;color:var(--muted)">(als het speelde)</span></label>
-  <textarea id="werk"></textarea>
+  <label for="besch">Beschouwing</label>
+  <div class="q">Jouw klinische inschatting: wat begrijp je nu beter, wat houdt het in stand, wat werkt? Is het plan nog goed? <i>Bijv.: Het piekeren lijkt vooral gevoed te worden door angst om tekort te schieten op het werk. Met de cognitieve interventies kan ze daar goed mee werken.</i></div>
+  <textarea id="besch"></textarea>
 
-  <label for="afspraken">7. Afspraken en huiswerk</label>
-  <textarea id="afspraken"></textarea>
+  <h2>Vervolg</h2>
+  <label for="afspraken">Afspraken en huiswerk</label>
+  <textarea id="afspraken" placeholder="Bijv.: Elke werkdag het piekerkwartier, en drie G-schema's over situaties op het werk."></textarea>
+  <label for="plan">Volgende sessie</label>
+  <textarea id="plan" placeholder="Bijv.: Het gesprek met de leidinggevende voorbereiden, oefenen met grenzen aangeven."></textarea>
 
-  <label for="plan">8. Volgende sessie</label>
-  <div class="q">Waar ga je mee verder?</div>
-  <textarea id="plan"></textarea>
-
-  <label style="margin-top:20px">Verslag</label>
+  <div style="display:flex;justify-content:space-between;align-items:end;margin-top:20px">
+    <label style="margin:0">Verslag</label>
+    <span class="stijl">Opmaak <select id="stijl"><option value="lopend">Lopende tekst</option><option value="kopjes">Met kopjes</option></select></span>
+  </div>
   <pre id="uit"></pre>
 
   <div class="bar">
@@ -84,69 +137,148 @@ pre{white-space:pre-wrap;word-wrap:break-word;background:var(--chip);border-radi
 
 <script>
 const INTV=[
-  ['Holding','Holding (gevoel toelaten en verdragen in de sessie)'],
+  ['Holding','holding (gevoel toelaten en verdragen in de sessie)'],
   ['Psycho-educatie','psycho-educatie'],
   ['Cognitief','cognitieve herstructurering'],
-  ['G-schema','G-schema'],
+  ['G-schema','het G-schema'],
   ['Exposure','exposure'],
   ['Gedragsactivatie','gedragsactivatie'],
   ['ACT','ACT (waarden, defusie, hier-en-nu)'],
-  ['Ontspanning','ontspannings- of ademhalingsoefening'],
+  ['Ontspanning','een ontspannings- of ademhalingsoefening'],
   ['Probleemoplossing','probleemoplossende vaardigheden'],
-  ['Grenzen/assertiviteit','grenzen en assertiviteit'],
-  ['Terugvalpreventie','terugvalpreventie']
+  ['Grenzen/assertiviteit','het oefenen met grenzen en assertiviteit'],
+  ['Rollenspel','een rollenspel'],
+  ['Terugvalpreventie','terugvalpreventie'],
+  ['Evaluatie','een tussentijdse evaluatie']
 ];
-const gekozen=new Set();
+// [knop, bijvoeglijk naamwoord in "een … indruk"]
+const INDRUK=[
+  ['Rustig','rustige'],['Open','open'],['Gespannen','gespannen'],['Vermoeid','vermoeide'],
+  ['Somber','sombere'],['Emotioneel','emotionele'],['Opgewekt','opgewekte'],['Vlak','vlakke'],
+  ['Onrustig','onrustige'],['Gemotiveerd','gemotiveerde']
+];
 const $=id=>document.getElementById(id);
-const chips=$('chips');
-INTV.forEach(([kort],i)=>{
-  const b=document.createElement('button');
-  b.type='button'; b.className='chip'; b.textContent=kort;
-  b.onclick=()=>{ gekozen.has(i)?gekozen.delete(i):gekozen.add(i); b.classList.toggle('on'); maak(); };
-  chips.appendChild(b);
-});
+const gekozen=new Set(), indruk=new Set();
+function knoppen(doos,lijst,set){
+  lijst.forEach(([kort],i)=>{
+    const b=document.createElement('button');
+    b.type='button'; b.className='chip'; b.textContent=kort; b.dataset.i=i;
+    b.onclick=()=>{ set.has(i)?set.delete(i):set.add(i); b.classList.toggle('on'); maak(); };
+    doos.appendChild(b);
+  });
+}
+knoppen($('chips'),INTV,gekozen);
+knoppen($('indruk'),INDRUK,indruk);
 const vandaag=()=>{const d=new Date(); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,10);};
 $('datum').value=vandaag();
 
-const zin=t=>{ t=t.trim().replace(/\s*\n+\s*/g,' '); if(!t) return ''; t=t[0].toUpperCase()+t.slice(1); return /[.!?]$/.test(t)?t:t+'.'; };
+const zin=t=>{ t=(t||'').trim().replace(/\s*\n+\s*/g,' '); if(!t) return ''; t=t[0].toUpperCase()+t.slice(1); return /[.!?]["'”’)]?$/.test(t)?t:t+'.'; };
+const klein=t=>t?t[0].toLowerCase()+t.slice(1):t;
+const opsom=a=>a.length<2?(a[0]||''):a.slice(0,-1).join(', ')+' en '+a[a.length-1];
+const v=id=>$(id).value.trim();
+const samen=(...z)=>z.filter(Boolean).join(' ');
+
 function maak(){
-  const r=[];
-  const d=$('datum').value, nr=$('nr').value.trim();
-  const kop=[nr?'Sessie '+nr:'Sessie', d?new Date(d+'T12:00').toLocaleDateString('nl-NL'):''].filter(Boolean).join(' – ');
-  r.push(kop);
-  const voeg=(titel,tekst)=>{ if(tekst) r.push(titel+': '+tekst); };
-  voeg('Terugblik',zin($('terug').value));
-  voeg('Besproken',zin($('thema').value));
-  const lijst=[...gekozen].sort((a,b)=>a-b).map(i=>INTV[i][1]).join(', ');
-  const iv=[lijst?zin(lijst):'',zin($('intv').value)].filter(Boolean).join(' ');
-  voeg('Interventies',iv);
-  voeg('Reactie cliënt',zin($('reactie').value));
-  const vg=[$('voortgang').value?$('voortgang').value+'.':'',zin($('voortgangT').value)].filter(Boolean).join(' ');
-  voeg('Voortgang behandeldoelen',vg);
-  voeg('Werk en re-integratie',zin($('werk').value));
-  voeg('Afspraken en huiswerk',zin($('afspraken').value));
-  voeg('Volgende sessie',zin($('plan').value));
-  $('uit').textContent=r.join('\n');
+  const W=$('wie').value, w=klein(W);
+  const d=v('datum'), nr=v('nr'), soort=v('soort');
+  const kop=[nr?'Sessie '+nr:'Sessie', d?new Date(d+'T12:00').toLocaleDateString('nl-NL'):'', soort].filter(Boolean).join(' – ');
+
+  // sinds de vorige keer
+  const doelK=klein(v('doel')).replace(/[.]$/,'');
+  const gaat={beter:'Sinds de vorige sessie gaat het volgens '+w+' beter.',wisselend:'Sinds de vorige sessie gaat het volgens '+w+' wisselend.',
+    gelijk:'Sinds de vorige sessie gaat het volgens '+w+' ongeveer hetzelfde.',zwaarder:'Sinds de vorige sessie ervaart '+w+' het als zwaarder.'}[v('gaat')]||'';
+  const hw={ja:'Het huiswerk is uitgevoerd.',deels:'Het huiswerk is deels uitgevoerd.',nee:'Het huiswerk is niet uitgevoerd.',geen:''}[v('hw')]||'';
+  const terug=samen(gaat,zin(v('terug')),hw);
+  const lopend=$('stijl').value!=='kopjes';
+
+  // in de sessie
+  const ind=[...indruk].sort((a,b)=>a-b).map(i=>INDRUK[i][1]);
+  const indZin=ind.length?W+' maakte een '+opsom(ind)+' indruk.':'';
+  const indruktekst=samen(indZin,zin(v('indrukT')));
+  const ivl=[...gekozen].sort((a,b)=>a-b).map(i=>INTV[i][1]);
+  let ivZin=ivl.length?'Er is gewerkt met '+opsom(ivl)+'.':'';
+  if(lopend && doelK) ivZin=ivl.length?'Aan het behandeldoel ‘'+doelK+'’ is gewerkt met '+opsom(ivl)+'.':'Er is gewerkt aan het behandeldoel ‘'+doelK+'’.';
+  const interventies=samen(ivZin,zin(v('intv')));
+  const ond=v('onderwerp').replace(/[.]$/,'');
+  const besproken=samen(ond?'Centraal stond '+klein(ond)+'.':'',zin(v('thema'))), reactie=zin(v('reactie'));
+
+  // stand van zaken
+  const werkZ={volledig:W+' werkt volledig.',gedeeltelijk:W+' is gedeeltelijk aan het werk.',aangepast:W+' verricht aangepast werk.',uitval:W+' is volledig uitgevallen voor het werk.'}[v('werk')]||'';
+  const werk=samen(werkZ,zin(v('werkT')));
+  const veilZ={geen:'Suïcidaliteit is uitgevraagd; er zijn geen aanwijzingen voor suïcidale gedachten.',wel:'Veiligheid is uitgevraagd.'}[v('veilig')]||'';
+  const veilig=samen(veilZ,zin(v('veiligT')));
+  const vgZ={voor:'Op het behandeldoel is vooruitgang zichtbaar.',stabiel:'Het beeld is stabiel ten opzichte van de vorige sessie.',
+    achter:'Er is sprake van achteruitgang ten opzichte van de vorige sessie.',nog:'De voortgang is nog niet goed te beoordelen.'}[v('voortgang')]||'';
+  const voortgang=samen(vgZ,zin(v('voortgangT')));
+  const besch=zin(v('besch')), afspr=zin(v('afspraken')), plan=zin(v('plan'));
+
+  let r=[];
+  if(!lopend){
+    r.push(kop);
+    const k=(t,x)=>{ if(x) r.push(t+': '+x); };
+    k('Behandeldoel',v('doel')?zin(v('doel')):'');
+    k('Terugblik',terug);
+    k('Indruk',indruktekst);
+    k('Besproken',besproken);
+    k('Interventies',interventies);
+    k('Reactie cliënt',reactie);
+    k('Werk',werk);
+    k('Veiligheid',veilig);
+    k('Voortgang',voortgang);
+    k('Beschouwing',besch);
+    k('Afspraken en huiswerk',afspr);
+    k('Volgende sessie',plan);
+    $('uit').textContent=r.join('\n');
+  } else {
+    const p=[kop,
+      terug,
+      samen(indruktekst,besproken,interventies,reactie),
+      samen(voortgang,werk,veilig),
+      besch?'Beschouwing: '+besch:'',
+      samen(afspr?'Afspraken: '+afspr:'', plan?'Volgende sessie: '+plan:'')
+    ].filter(Boolean);
+    $('uit').textContent=p.join('\n\n');
+  }
   $('ok').textContent='';
 }
 document.querySelectorAll('input,select,textarea').forEach(el=>el.addEventListener('input',maak));
 
-function kopieer(){
-  const t=$('uit').textContent;
-  navigator.clipboard.writeText(t).then(()=>{ $('ok').textContent='Gekopieerd'; },()=>{
-    const r=document.createRange(); r.selectNodeContents($('uit')); const s=getSelection(); s.removeAllRanges(); s.addRange(r);
-    $('ok').textContent='Druk op Ctrl+C';
-  });
+function zetKnoppen(doos,set,idx){ set.clear(); idx.forEach(i=>set.add(i)); doos.querySelectorAll('.chip').forEach(c=>c.classList.toggle('on',set.has(+c.dataset.i))); }
+function voorbeeld(){
+  const f={nr:'4',soort:'',wie:'Mevrouw',doel:'minder piekeren en weer doorslapen',gaat:'beter',hw:'deels',
+    terug:'Ze heeft vier van de zeven nachten doorgeslapen. Het piekerkwartier lukte op werkdagen, in het weekend niet',
+    indrukT:'Ze werd stil en kreeg tranen toen het over haar werk ging',
+    onderwerp:'het gesprek met haar leidinggevende over uitbreiding van uren',
+    thema:'Het gesprek is volgende week. Ze ziet er erg tegenop, omdat ze bang is om nee te zeggen',
+    intv:'Met het G-schema is de gedachte "als ik nee zeg, ben ik een slechte collega" onderzocht. Samen is een helpende gedachte geformuleerd',
+    reactie:'Ze kon de gedachte na het uitdagen relativeren: "Eigenlijk vraag ik alleen wat ik nodig heb"',
+    werk:'gedeeltelijk',werkT:'Ze werkt nu 2 x 3 uur. Op 2 december heeft ze een gesprek met de bedrijfsarts',veilig:'',veiligT:'',
+    voortgang:'voor',voortgangT:'Ze slaapt vaker door en piekert korter',
+    besch:'Het piekeren lijkt vooral gevoed te worden door de angst om op het werk tekort te schieten. Ze kan goed met cognitieve interventies werken. Het plan blijft ongewijzigd',
+    afspraken:'Elke werkdag het piekerkwartier en drie G-schema\'s over situaties op het werk',
+    plan:'Het gesprek met de leidinggevende voorbereiden met een rollenspel'};
+  Object.keys(f).forEach(k=>{ $(k).value=f[k]; });
+  zetKnoppen($('chips'),gekozen,[2,3]);
+  zetKnoppen($('indruk'),indruk,[1,5]);
+  maak();
 }
 let leegTimer=null;
 function leegmaken(){
   const b=$('leeg');
   if(!leegTimer){ b.textContent='Zeker weten?'; leegTimer=setTimeout(()=>{ b.textContent='Leegmaken'; leegTimer=null; },3000); return; }
   clearTimeout(leegTimer); leegTimer=null; b.textContent='Leegmaken';
-  document.querySelectorAll('textarea').forEach(el=>el.value='');
-  $('nr').value=''; $('voortgang').value=''; $('datum').value=vandaag();
-  gekozen.clear(); document.querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));
+  document.querySelectorAll('textarea,input').forEach(el=>el.value='');
+  document.querySelectorAll('select').forEach(el=>{ if(el.id!=='stijl') el.selectedIndex=0; });
+  $('datum').value=vandaag();
+  zetKnoppen($('chips'),gekozen,[]); zetKnoppen($('indruk'),indruk,[]);
   maak(); scrollTo(0,0);
+}
+function kopieer(){
+  const t=$('uit').textContent;
+  navigator.clipboard.writeText(t).then(()=>{ $('ok').textContent='Gekopieerd'; },()=>{
+    const r=document.createRange(); r.selectNodeContents($('uit')); const s=getSelection(); s.removeAllRanges(); s.addRange(r);
+    $('ok').textContent='Druk op Ctrl+C';
+  });
 }
 maak();
 </script>

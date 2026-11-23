@@ -239,6 +239,7 @@ class MainForm : Form
         viewport.Controls.Add(strook);
         viewport.Resize += delegate { Indeling(); };
 
+        tips = new ToolTip();
         BuildVerslagPanel();
         BuildClipPanel();
 
@@ -254,7 +255,6 @@ class MainForm : Form
         Controls.Add(side);
 
         // onderkant: vier icoonknoppen naast elkaar
-        tips = new ToolTip();
         TableLayoutPanel onder = new TableLayoutPanel();
         onder.Dock = DockStyle.Bottom;
         onder.Height = S(48);
@@ -279,32 +279,46 @@ class MainForm : Form
         onder.Controls.Add(btnExit, 3, 0);
         side.Controls.Add(onder);
 
-        // klembord-knop direct onder de tabbladen
         btnClip = SideButton("Klembord");
-        btnClip.Dock = DockStyle.Top;
         btnClip.Click += delegate { clip.Visible = !clip.Visible; StyleClipButton(); };
-        side.Controls.Add(btnClip);
-
         btnVerslag = SideButton("Sessieverslag");
-        btnVerslag.Dock = DockStyle.Top;
         btnVerslag.Click += delegate { ShowVerslag(!verslag.Visible); };
-        side.Controls.Add(btnVerslag);
 
-        Panel gap = new Panel();
-        gap.Dock = DockStyle.Top;
-        gap.Height = S(14);
-        side.Controls.Add(gap);
-
-        // tabbladen (omgekeerd toevoegen bij Dock=Top)
-        for (int i = order.Count - 1; i >= 0; i--)
+        // menu in groepen; "#" = kopje. Volgorde van boven naar beneden.
+        string[] menu = {
+            "start",
+            "#Dagelijks", "outlook", "james", "caseload",
+            "#Sessie", "sessieblad", "@verslag", "interventies",
+            "#Diagnostiek en verslag", "dsm", "rapportages", "sjablonen",
+            "#Documenten", "remarkable", "@klembord" };
+        List<Control> items = new List<Control>();
+        foreach (string m in menu)
         {
-            Tab t = order[i];
+            if (m.StartsWith("#")) { items.Add(MenuKop(m.Substring(1))); continue; }
+            if (m == "@verslag") { items.Add(btnVerslag); continue; }
+            if (m == "@klembord") { items.Add(btnClip); continue; }
+            Tab t;
+            if (!tabs.TryGetValue(m, out t)) continue;
             Button b = SideButton(t.Label);
-            b.Dock = DockStyle.Top;
             Tab captured = t;
             b.Click += delegate { ShowTab(captured); };
             t.Btn = b;
-            side.Controls.Add(b);
+            items.Add(b);
+        }
+        foreach (Tab t in order)
+        {
+            if (t.Btn != null) continue;           // tabblad dat (nog) niet in het menu staat
+            Button b = SideButton(t.Label);
+            Tab captured = t;
+            b.Click += delegate { ShowTab(captured); };
+            t.Btn = b;
+            items.Add(b);
+        }
+        // omgekeerd toevoegen bij Dock=Top
+        for (int i = items.Count - 1; i >= 0; i--)
+        {
+            items[i].Dock = DockStyle.Top;
+            side.Controls.Add(items[i]);
         }
 
         // klok en datum, zichtbaar ook als de taakbalk verborgen is (schermvullend)
@@ -372,11 +386,23 @@ class MainForm : Form
         return b;
     }
 
+    Label MenuKop(string text)
+    {
+        Label l = new Label();
+        l.Text = text.ToUpper(new CultureInfo("nl-NL"));
+        l.Height = S(30);
+        l.Padding = new Padding(S(10), S(10), 0, 0);
+        l.Font = new Font("Segoe UI Semibold", 8f);
+        l.ForeColor = Muted;
+        l.TextAlign = ContentAlignment.BottomLeft;
+        return l;
+    }
+
     Button SideButton(string text)
     {
         Button b = new Button();
         b.Text = "   " + text;
-        b.Height = S(44);
+        b.Height = S(38);
         b.FlatStyle = FlatStyle.Flat;
         b.FlatAppearance.BorderSize = 0;
         b.FlatAppearance.MouseOverBackColor = Color.FromArgb(244, 245, 248);
@@ -450,6 +476,29 @@ class MainForm : Form
         t.View = v;
         t.Host = v;
         if (t.Key == "james") BuildPane(t);
+        WebView2 pv = null;
+        if (t.Key == "start" && !Cfg("aanmeldpaneel").Equals("uit", StringComparison.OrdinalIgnoreCase))
+        {
+            // het aanmeldpaneel als eigen browser rechts op de startpagina (werkt dan net als in Edge)
+            Panel host = new Panel();
+            host.BackColor = Bg;
+            v.Dock = DockStyle.Fill;
+            host.Controls.Add(v);
+            Splitter sp = new Splitter();
+            sp.Dock = DockStyle.Right;
+            sp.Width = S(6);
+            sp.BackColor = Line;
+            sp.MinSize = S(320);
+            host.Controls.Add(sp);
+            pv = new WebView2();
+            pv.Dock = DockStyle.Right;
+            pv.Width = LeesPaneelBreedte();
+            pv.DefaultBackgroundColor = Color.White;
+            host.Controls.Add(pv);
+            WebView2 pvc = pv;
+            sp.SplitterMoved += delegate { try { File.WriteAllText(Path.Combine(dataDir, "paneelbreedte.txt"), ((int)(pvc.Width / k)).ToString()); } catch { } };
+            t.Host = host;
+        }
         t.Host.Visible = false;
         strook.Controls.Add(t.Host);
         await v.EnsureCoreWebView2Async(env);
@@ -458,17 +507,18 @@ class MainForm : Form
             await v.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(OutlookScript);
         if (t.Key == "remarkable")
             await v.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(RemarkableScript);
-        if (t.Key == "start")
-        {
-            await v.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(PaneelScript);
-            CoreWebView2 core = v.CoreWebView2;
-            core.NavigationCompleted += delegate
-            {
-                string u = Cfg("aanmeldpaneel").Equals("uit", StringComparison.OrdinalIgnoreCase) ? "uit" : ResolveUrl("aanmeldpaneel", "Aanmeldpaneel");
-                try { core.PostWebMessageAsString("paneel:" + u); } catch { }
-            };
-        }
         v.CoreWebView2.Navigate(t.Url);
+        if (pv != null)
+        {
+            try
+            {
+                await pv.EnsureCoreWebView2Async(env);
+                Setup(pv.CoreWebView2, null);
+                await pv.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(PaneelScript);
+                pv.CoreWebView2.Navigate(ResolveUrl("aanmeldpaneel", "Aanmeldpaneel"));
+            }
+            catch { }
+        }
     }
 
     async void ShowTab(Tab t)
@@ -835,7 +885,15 @@ class MainForm : Form
         else SelectPaneTab(t, t.Pane[t.Pane.Count - 1]);
     }
 
-    // ---------- aanmeldpaneel (als tegel op de startpagina) ----------
+    int LeesPaneelBreedte()
+    {
+        int b = 440;
+        try { int.TryParse(File.ReadAllText(Path.Combine(dataDir, "paneelbreedte.txt")).Trim(), out b); } catch { }
+        if (b < 320) b = 440;
+        return S(Math.Min(b, 900));
+    }
+
+    // ---------- aanmeldpaneel (rechts op de startpagina) ----------
     const string PaneelScript = @"
 (function(){
   if (location.hostname !== 'boddie91.github.io' || location.pathname.indexOf('hart-aanmeldpaneel') < 0) return;
@@ -993,12 +1051,14 @@ class MainForm : Form
         head.Controls.Add(t);
 
         Button open = SmallButton("Map");
-        open.Location = new Point(S(130), S(12));
+        open.Width = S(54);
+        open.Location = new Point(S(110), S(12));
         open.Click += delegate { Process.Start("explorer.exe", "\"" + clipDir + "\""); };
         head.Controls.Add(open);
 
         Button empty = SmallButton("Leeg");
-        empty.Location = new Point(S(200), S(12));
+        empty.Width = S(54);
+        empty.Location = new Point(S(168), S(12));
         empty.Click += delegate
         {
             if (MessageBox.Show(this, "Alle bestanden van het klembord wissen?", "Hart Werkplek", MessageBoxButtons.YesNo) == DialogResult.Yes)
@@ -1008,6 +1068,15 @@ class MainForm : Form
             }
         };
         head.Controls.Add(empty);
+
+        Button dicht = SmallButton("\u00D7");
+        dicht.Size = new Size(S(30), S(30));
+        dicht.Location = new Point(S(236), S(12));
+        dicht.Font = new Font("Segoe UI", 11f);
+        dicht.FlatAppearance.BorderSize = 0;
+        tips.SetToolTip(dicht, "Klembord sluiten");
+        dicht.Click += delegate { clip.Visible = false; StyleClipButton(); };
+        head.Controls.Add(dicht);
     }
 
     Button SmallButton(string text)

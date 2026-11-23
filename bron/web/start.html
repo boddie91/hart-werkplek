@@ -5,66 +5,80 @@
 <title>Start – Hart Werkplek</title>
 <style>
 :root{--bg:#eef0f4;--pane:#fff;--ink:#1d2433;--muted:#5d6678;--line:#dde1ea;--accent:#b23a5b;--accent-soft:#f8e6ec;
---sun:#9a6a12;--sun-soft:#fbf1dc;--ok:#2f7a55;--ok-soft:#e2f2e9;--chip:#eef1f7;--late:#c2410c}
+--sun:#9a6a12;--sun-soft:#fbf1dc;--ok:#2f7a55;--ok-soft:#e2f2e9;--chip:#eef1f7;--late:#c2410c;--rij:20px;--gap:14px}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:"Segoe UI",system-ui,sans-serif;font-size:15px}
-.wrap{padding:24px 28px;max-width:1500px}
-.head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:18px}
-h1{margin:0;font-size:28px;font-weight:700}
-.sub{color:var(--muted);margin-top:4px}
-.clock{font-size:34px;font-weight:300;font-variant-numeric:tabular-nums;text-align:right}
-.grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));grid-auto-rows:8px;column-gap:16px;row-gap:0;grid-auto-flow:row dense;align-items:start}
-.card{background:var(--pane);border:1px solid var(--line);border-radius:14px;padding:16px 18px;position:relative;display:flex;flex-direction:column;min-width:0;box-sizing:border-box}
+.wrap{padding:22px 26px 30px}
+.head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+h1{margin:0;font-size:26px;font-weight:700}
+.sub{color:var(--muted);margin-top:3px}
+.headknop{display:flex;gap:8px;align-items:center}
+
+/* in één oogopslag */
+.blik{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--gap);margin-bottom:var(--gap)}
+.getal{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 16px;cursor:pointer;text-align:left;min-height:auto;display:block;width:100%}
+.getal:hover{border-color:var(--muted)}
+.getal b{display:block;font-size:30px;font-weight:600;line-height:1.1;font-variant-numeric:tabular-nums}
+.getal span{font-size:13px;color:var(--muted)}
+.getal.let{background:var(--accent-soft);border-color:#efc9d5}.getal.let b{color:var(--accent)}
+.getal.laat{background:#fdeee6;border-color:#f6cdb7}.getal.laat b{color:var(--late)}
+.getal.rust b{color:var(--ok)}
+
+/* vrij te plaatsen tegels */
+.grid{position:relative;display:grid;grid-template-columns:repeat(12,minmax(0,1fr));grid-auto-rows:var(--rij);gap:var(--gap)}
+.card{background:var(--pane);border:1px solid var(--line);border-radius:14px;padding:14px 16px;position:relative;display:flex;flex-direction:column;min-width:0;min-height:0;overflow:auto}
 .card[hidden]{display:none}
-.card.vast{overflow:auto}
-.card.vast iframe{min-height:0!important}
-body.slepen iframe{pointer-events:none}
-.card.vast textarea{flex:1;min-height:60px}
-.greep{margin-left:auto;align-self:center;margin-right:-6px;padding:2px 6px;border-radius:6px;color:var(--muted);cursor:grab;font-size:16px;line-height:1;opacity:.35;user-select:none}
-.card:hover .greep{opacity:1}
-.greep:hover{background:var(--chip)}
-.hoek{position:absolute;right:2px;bottom:2px;width:18px;height:18px;cursor:nwse-resize;opacity:0;border-radius:4px;
-  background:linear-gradient(135deg,transparent 0 55%,var(--muted) 55% 62%,transparent 62% 72%,var(--muted) 72% 79%,transparent 79%)}
-.card:hover .hoek{opacity:.7}
-.card.sleept{opacity:.4}
-.card.doel{outline:2px dashed var(--accent);outline-offset:3px}
-.card.rekt{outline:2px solid var(--accent);outline-offset:3px}
-.layoutbar{display:flex;gap:12px;align-items:center;justify-content:space-between;color:var(--muted);font-size:12.5px;margin-top:6px}
-@media(max-width:900px){.grid{grid-template-columns:repeat(6,minmax(0,1fr))}}
-.card h2{margin:0 0 12px;font-size:17px;display:flex;gap:8px;align-items:baseline;cursor:default}
+.card h2{margin:0 0 10px;font-size:16px;display:flex;gap:8px;align-items:baseline}
 .card h2 small{font-size:12px;color:var(--muted);font-weight:400}
-button{font:inherit;cursor:pointer;border-radius:9px;border:1px solid var(--line);background:#fff;color:var(--ink);min-height:40px;padding:0 14px}
+.card textarea.vul{flex:1;min-height:60px;resize:none}
+body.bewerk .grid{background:rgba(178,58,91,.045);outline:1px dashed #e3b2c1;outline-offset:6px;min-height:70vh;border-radius:10px}
+body.bewerk .card{cursor:move;user-select:none;outline:2px dashed transparent}
+body.bewerk .card:hover{outline-color:#e3b2c1}
+body.bewerk .card > *:not(.hoek):not(.weg):not(h2){pointer-events:none;opacity:.75}
+.hoek,.weg{display:none}
+body.bewerk .hoek{display:block;position:absolute;right:3px;bottom:3px;width:20px;height:20px;cursor:nwse-resize;border-radius:4px;
+  background:linear-gradient(135deg,transparent 0 50%,var(--accent) 50% 58%,transparent 58% 70%,var(--accent) 70% 78%,transparent 78%)}
+body.bewerk .weg{display:block;position:absolute;right:8px;top:8px;min-height:auto;padding:0 8px;height:26px;font-size:13px}
+.schaduw{background:rgba(178,58,91,.12);border:2px dashed var(--accent);border-radius:14px;pointer-events:none}
+.card.beweegt{opacity:.55;z-index:5}
+.balk{display:none;gap:10px;align-items:center;flex-wrap:wrap;background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px 12px;margin-bottom:var(--gap);font-size:13px;color:var(--muted)}
+body.bewerk .balk{display:flex}
+.balk .verborgen{display:flex;gap:6px;flex-wrap:wrap}
+
+button{font:inherit;cursor:pointer;border-radius:9px;border:1px solid var(--line);background:#fff;color:var(--ink);min-height:38px;padding:0 14px}
 button:hover{border-color:var(--muted)}
 .primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700}
 .green{background:var(--ok);border-color:var(--ok);color:#fff;font-weight:700}
-.small{min-height:32px;padding:0 10px;font-size:13px}
-input,select,textarea{font:inherit;border:1px solid var(--line);border-radius:9px;padding:8px 10px;background:#fff;color:var(--ink);width:100%}
-textarea{min-height:150px;resize:vertical}
-.tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-.tile{min-height:68px;text-align:left;padding:10px 12px;background:var(--chip);border-color:var(--line)}
+.small{min-height:30px;padding:0 10px;font-size:13px}
+input,select,textarea{font:inherit;border:1px solid var(--line);border-radius:9px;padding:7px 10px;background:#fff;color:var(--ink);width:100%}
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px}
+.tile{min-height:56px;text-align:left;padding:8px 12px;background:var(--chip);border-color:var(--line)}
 .tile b{display:block}.tile span{font-size:12px;color:var(--muted)}
-.tile.mail{background:var(--accent-soft)}.tile.agenda{background:var(--sun-soft)}
 .row{display:flex;gap:8px;align-items:center}.row>*{flex:1}.row>.k{flex:0 0 auto}
-.filters{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
-.chip{border-radius:20px;padding:4px 11px;font-size:13px;border:1px solid var(--line);background:#fff;cursor:pointer;min-height:auto}
+.filters{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 4px}
+.chip{border-radius:20px;padding:3px 11px;font-size:13px;border:1px solid var(--line);background:#fff;cursor:pointer;min-height:auto}
 .chip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
-.todo{display:flex;gap:10px;align-items:flex-start;padding:10px 2px;border-bottom:1px solid #eef0f4}
+.todo{display:flex;gap:10px;align-items:flex-start;padding:9px 2px;border-bottom:1px solid #eef0f4}
 .todo:last-child{border-bottom:none}
 .todo input[type=checkbox]{width:18px;height:18px;margin-top:2px;flex:0 0 auto;accent-color:var(--ok)}
-.todo .txt{flex:1}
+.todo .txt{flex:1;min-width:0}
 .todo.done .txt{text-decoration:line-through;color:var(--muted)}
 .meta{font-size:12px;color:var(--muted);margin-top:2px}
 .late{color:var(--late);font-weight:700}
+.groep{font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:10px 0 0;font-weight:700}
 .tag{display:inline-block;font-size:11px;padding:1px 8px;border-radius:10px;margin-right:6px;font-weight:700}
 .t-bellen{background:var(--accent-soft);color:var(--accent)}.t-verslag{background:var(--chip);color:#3d4a63}
 .t-terugkoppeling{background:var(--ok-soft);color:var(--ok)}.t-intake{background:var(--sun-soft);color:var(--sun)}.t-overig{background:#eee;color:#555}
-.tel{font-size:18px;font-weight:700;letter-spacing:.04em;font-variant-numeric:tabular-nums}
-.call{padding:12px;border:1px solid var(--line);border-radius:10px;margin-bottom:10px}
+.tel{font-size:17px;font-weight:700;letter-spacing:.04em;font-variant-numeric:tabular-nums}
+.call{padding:10px 12px;border:1px solid var(--line);border-radius:10px;margin-bottom:8px}
 .empty{color:var(--muted);font-style:italic;padding:6px 0}
-.hint{background:var(--sun-soft);border:none;color:#5a3f0b;line-height:1.5}
-.hint p{margin:0 0 10px}
+.hint{background:var(--sun-soft);border:1px solid #f1dfb5;color:#5a3f0b;line-height:1.5;border-radius:14px;padding:12px 16px;margin-bottom:var(--gap);display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.hint p{margin:0;flex:1;min-width:280px}
+.hint[hidden]{display:none}
 .note{font-size:12px;color:var(--muted);margin-top:8px;line-height:1.45}
-.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:9px 16px;border-radius:10px;opacity:0;transition:.25s;pointer-events:none}
+.voet{display:flex;gap:14px;justify-content:flex-end;color:var(--muted);font-size:12.5px;margin-top:14px}
+.voet button{min-height:auto;padding:2px 0;border:0;background:none;color:var(--muted);text-decoration:underline}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:9px 16px;border-radius:10px;opacity:0;transition:.25s;pointer-events:none;z-index:9}
 .toast.on{opacity:1}
 </style>
 </head>
@@ -73,35 +87,40 @@ textarea{min-height:150px;resize:vertical}
   <div class="head">
     <div>
       <h1 id="groet">Goedemorgen, Jasmijn</h1>
-      <div class="sub" id="samenvatting"></div>
+      <div class="sub" id="datum"></div>
     </div>
-    <div>
-      <div class="clock" id="klok"></div>
-      <div class="sub" id="datum" style="text-align:right"></div>
+    <div class="headknop">
+      <button class="small" id="bewerkKnop" onclick="bewerk(!document.body.classList.contains('bewerk'))">Indeling aanpassen</button>
     </div>
   </div>
 
+  <div class="hint" id="meldingHint" hidden>
+    <p><b>Meldingen dempen.</b> Windows kan meldingen vanzelf stilzetten zolang een programma schermvullend open staat: <b>Niet storen automatisch inschakelen → Bij gebruik van een app in volledig schermmodus</b>.</p>
+    <button class="primary small" onclick="post('meldingen')">Open instellingen</button><button class="small" onclick="hideHint()">Gedaan</button>
+  </div>
+
+  <div class="blik" id="blik">
+    <button class="getal" id="gMail" onclick="post('open:outlook|https://outlook.office.com/mail/')"><b>–</b><span>ongelezen mail</span></button>
+    <button class="getal" id="gBel" onclick="naarTegel('bellen')"><b>0</b><span>nog bellen</span></button>
+    <button class="getal" id="gVandaag" onclick="naarTegel('todo')"><b>0</b><span>to do's voor vandaag</span></button>
+    <button class="getal" id="gLaat" onclick="naarTegel('todo')"><b>0</b><span>verlopen</span></button>
+  </div>
+
+  <div class="balk">
+    <span>Sleep een tegel naar een plek. Lege plekken mogen blijven. Sleep de hoek rechtsonder voor de grootte.</span>
+    <span class="verborgen" id="verborgen"></span>
+    <span style="flex:1"></span>
+    <button class="small" onclick="herstelIndeling()">Standaardindeling</button>
+    <button class="small primary" onclick="bewerk(false)">Klaar</button>
+  </div>
+
   <div class="grid" id="grid">
-    <div class="card hint" data-tegel="hint" id="meldingHint" hidden>
-        <h2>Meldingen dempen</h2>
-        <p>Windows kan meldingen vanzelf stilzetten zolang een programma schermvullend open staat. Zet dat één keer aan: <b>Niet storen automatisch inschakelen → Bij gebruik van een app in volledig schermmodus</b>.</p>
-        <div class="row"><button class="k primary" onclick="post('meldingen')">Open meldingsinstellingen</button><button class="k" onclick="hideHint()">Gedaan</button></div>
-      </div>
-    <div class="card" data-tegel="aanmeld" id="aanmeldTegel">
-      <h2>Aanmeldpaneel <small>to do's en caseload</small></h2>
-      <iframe id="aanmeldFrame" title="Aanmeldpaneel" style="flex:1;width:100%;min-height:520px;border:1px solid var(--line);border-radius:10px;background:#fff"></iframe>
-    </div>
-    <div class="card" data-tegel="inbox">
-        <h2>Inbox <small id="inboxTijd">Outlook</small></h2>
-        <div id="inbox"><div class="empty">Log één keer in op het tabblad Outlook. Daarna verschijnt je inbox hier vanzelf.</div></div>
-        <div id="inboxTip"></div>
-      </div>
-    <div class="card" data-tegel="todo">
+    <div class="card" data-tegel="todo" data-naam="To do's">
       <h2>To do's <small>alleen voornaam of initialen</small></h2>
       <div class="row" style="margin-bottom:8px">
-        <select id="nType" class="k" style="width:170px" onchange="toggleTel()">
+        <select id="nType" class="k" style="width:150px" onchange="toggleTel()">
           <option value="bellen">Bellen</option>
-          <option value="intake">Intake uploaden/uitwerken</option>
+          <option value="intake">Intake</option>
           <option value="verslag">Verslag</option>
           <option value="terugkoppeling">Terugkoppeling</option>
           <option value="overig">Overig</option>
@@ -110,47 +129,43 @@ textarea{min-height:150px;resize:vertical}
       </div>
       <div class="row">
         <input id="nTel" placeholder="Telefoonnummer (plak uit James)" inputmode="tel">
-        <input id="nDue" type="date" class="k" style="width:160px" title="Uiterlijk">
+        <input id="nDue" type="date" class="k" style="width:150px" title="Uiterlijk">
         <button class="k primary" onclick="addTodo()">Toevoegen</button>
       </div>
       <div class="filters" id="filters"></div>
       <div id="todos"></div>
-      <div style="text-align:right;margin-top:8px"><button class="small" onclick="clearDone()">Afgevinkte opruimen</button></div>
+      <div style="text-align:right;margin-top:6px"><button class="small" onclick="clearDone()">Afgevinkte opruimen</button></div>
     </div>
-    <div class="card" data-tegel="bellen">
-        <h2>Nog bellen <small>via je iPhone</small></h2>
-        <div id="bellen"></div>
-        <div class="note">"Bel" geeft het nummer door aan Telefoonkoppeling van Windows, zodat je het nooit hoeft over te typen.</div>
+    <div class="card" data-tegel="inbox" data-naam="Inbox">
+      <h2>Inbox <small id="inboxTijd">Outlook</small></h2>
+      <div id="inboxTip"></div>
+      <div id="inbox"><div class="empty">Open één keer het tabblad Outlook. Daarna verschijnt je inbox hier vanzelf.</div></div>
+    </div>
+    <div class="card" data-tegel="bellen" data-naam="Nog bellen">
+      <h2>Nog bellen <small>via je iPhone</small></h2>
+      <div id="bellen"></div>
+    </div>
+    <div class="card" data-tegel="snel" data-naam="Snel naar">
+      <h2>Snel naar</h2>
+      <div class="tiles">
+        <button class="tile" onclick="post('open:outlook|https://outlook.office.com/calendar/')"><b>Agenda</b><span>Outlook</span></button>
+        <button class="tile" onclick="post('verslag')"><b>Sessieverslag</b><span>naast je werk</span></button>
+        <button class="tile" onclick="post('tab:sessieblad')"><b>Sessieblad</b><span>voor de reMarkable</span></button>
+        <button class="tile" onclick="post('checklist')"><b>Checklist</b><span>terugkoppeling start</span></button>
       </div>
-    <div class="card" data-tegel="snel">
-        <h2>Snel naar</h2>
-        <div class="tiles">
-          <button class="tile mail" onclick="post('open:outlook|https://outlook.office.com/mail/')"><b>Mail</b><span>Outlook</span></button>
-          <button class="tile agenda" onclick="post('open:outlook|https://outlook.office.com/calendar/')"><b>Agenda</b><span>Outlook</span></button>
-          <button class="tile" onclick="post('verslag')"><b>Sessieverslag</b><span>schrijven en kopiëren</span></button>
-          <button class="tile" onclick="post('tab:sjablonen')"><b>Sjablonen</b><span>reMarkable, spiekkaart</span></button>
-          <button class="tile" onclick="post('tab:james')"><b>James</b><span>EPD</span></button>
-          <button class="tile" onclick="post('tab:remarkable')"><b>reMarkable</b><span>notebooks en pdf's</span></button>
-          <button class="tile" onclick="post('tab:caseload')"><b>Caseload</b><span>Excel</span></button>
-          <button class="tile" onclick="post('tab:rapportages')"><b>Rapportages</b><span>verslag, terugkoppeling, verwijzing</span></button>
-          <button class="tile" onclick="post('tab:dsm')"><b>DSM</b><span>naslag en checklist</span></button>
-        </div>
-      </div>
-    <div class="card" data-tegel="klad">
-        <h2>Kladblok <small>alleen op deze computer</small></h2>
-        <textarea id="klad" placeholder="Snelle notitie tussen sessies door…"></textarea>
-      </div>
-    <div class="card" data-tegel="backup">
-        <h2>Back-up</h2>
-        <div class="row">
-          <button onclick="exportData()">Exporteren</button>
-          <button onclick="document.getElementById('imp').click()">Importeren</button>
-          <input type="file" id="imp" accept=".json" style="display:none" onchange="importData(event)">
-        </div>
-        <div class="note">To do's en kladblok staan alleen op deze computer. Exporteer af en toe als back-up.</div>
-      </div>
+    </div>
+    <div class="card" data-tegel="klad" data-naam="Kladblok">
+      <h2>Kladblok <small>alleen op deze computer</small></h2>
+      <textarea id="klad" class="vul" placeholder="Snelle notitie tussen sessies door…"></textarea>
+    </div>
   </div>
-  <div class="layoutbar"><span>Sleep een tegel aan <b>⠿</b> om hem te verplaatsen, sleep de hoek rechtsonder om hem groter of kleiner te maken. Dubbelklik op de hoek voor automatische hoogte.</span><button class="small" onclick="herstelIndeling()">Indeling herstellen</button></div>
+
+  <div class="voet">
+    <span>To do's en kladblok staan alleen op deze computer.</span>
+    <button onclick="exportData()">Back-up maken</button>
+    <button onclick="document.getElementById('imp').click()">Back-up terugzetten</button>
+    <input type="file" id="imp" accept=".json" style="display:none" onchange="importData(event)">
+  </div>
 </div>
 <div class="toast" id="toast"></div>
 
@@ -162,35 +177,35 @@ function load(){ try{const d=JSON.parse(localStorage.getItem(KEY)); if(d) return
 function save(){ try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){toast('Opslaan lukt niet');} }
 function toast(t){const el=document.getElementById('toast');el.textContent=t;el.classList.add('on');setTimeout(()=>el.classList.remove('on'),1800);}
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const $=id=>document.getElementById(id);
 
 function tick(){
   const n=new Date(),h=n.getHours();
-  document.getElementById('klok').textContent=n.toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'});
-  document.getElementById('datum').textContent=n.toLocaleDateString('nl-NL',{weekday:'long',day:'numeric',month:'long'});
-  document.getElementById('groet').textContent=(h<12?'Goedemorgen':h<18?'Goedemiddag':'Goedenavond')+', Jasmijn';
+  $('datum').textContent=n.toLocaleDateString('nl-NL',{weekday:'long',day:'numeric',month:'long'});
+  $('groet').textContent=(h<12?'Goedemorgen':h<18?'Goedemiddag':'Goedenavond')+', Jasmijn';
 }
-tick(); setInterval(tick,15000);
+tick(); setInterval(tick,30000);
 
 const TYPES={bellen:'Bellen',intake:'Intake',verslag:'Verslag',terugkoppeling:'Terugkoppeling',overig:'Overig'};
-const today=()=>new Date().toISOString().slice(0,10);
+const dag=d=>{ d=new Date(d); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,10); };
+const today=()=>dag(new Date());
 const clean=t=>t.replace(/[^\d+]/g,'');
 function fmtTel(t){const c=clean(t); if(/^06\d{8}$/.test(c)) return c.replace(/^(06)(\d{2})(\d{2})(\d{2})(\d{2})$/,'$1 $2 $3 $4 $5'); return c.replace(/(\d{3})(?=\d)/g,'$1 ');}
-function toggleTel(){ document.getElementById('nTel').style.display = nType.value==='bellen' ? '' : 'none'; }
+function toggleTel(){ $('nTel').style.display = $('nType').value==='bellen' ? '' : 'none'; }
 
 function addTodo(){
-  const type=nType.value, txt=nTxt.value.trim(), tel=clean(nTel.value), due=nDue.value;
-  if(!txt){ nTxt.focus(); return; }
+  const type=$('nType').value, txt=$('nTxt').value.trim(), tel=clean($('nTel').value), due=$('nDue').value;
+  if(!txt){ $('nTxt').focus(); return; }
   if(type==='bellen' && tel && tel.length<10){ toast('Nummer lijkt te kort, controleer het'); return; }
   S.todos.unshift({id:Date.now(),type,txt,tel:type==='bellen'?tel:'',due,done:false,pogingen:0});
-  nTxt.value=''; nTel.value=''; nDue.value=''; save(); render();
+  $('nTxt').value=''; $('nTel').value=''; $('nDue').value=''; save(); render();
 }
 function byId(id){ return S.todos.find(x=>x.id===id); }
 function toggle(id){ const t=byId(id); t.done=!t.done; save(); render(); }
 function del(id){ S.todos=S.todos.filter(x=>x.id!==id); save(); render(); }
-function nextWorkday(){ const d=new Date(); do{ d.setDate(d.getDate()+1); }while(d.getDay()===0||d.getDay()===6); return d.toISOString().slice(0,10); }
+function nextWorkday(){ const d=new Date(); do{ d.setDate(d.getDate()+1); }while(d.getDay()===0||d.getDay()===6); return dag(d); }
 function poging(id){
   const t=byId(id); t.pogingen=(t.pogingen||0)+1; t.laatste=new Date().toISOString();
-  // slim: niet opgenomen = automatisch morgen (volgende werkdag) opnieuw
   if(!t.due || t.due<=today()) t.due=nextWorkday();
   save(); render(); toast('Genoteerd. Staat weer op de lijst voor '+new Date(t.due+'T12:00').toLocaleDateString('nl-NL',{weekday:'long'}));
 }
@@ -202,42 +217,57 @@ function setFilter(f){ S.filter=f; save(); render(); }
 function dueHtml(t){
   if(!t.due) return '';
   const d=new Date(t.due+'T12:00').toLocaleDateString('nl-NL',{day:'numeric',month:'short'});
-  return (t.due<today() && !t.done) ? '<span class="late">Verlopen: '+d+'</span>' : 'Uiterlijk '+d;
+  if(t.done) return 'Uiterlijk '+d;
+  if(t.due<today()) return '<span class="late">Verlopen: '+d+'</span>';
+  if(t.due===today()) return '<b>Vandaag</b>';
+  return 'Uiterlijk '+d;
 }
-function render(){
-  const open=S.todos.filter(t=>!t.done);
-  const nb=open.filter(t=>t.type==='bellen').length, nl=open.filter(t=>t.due&&t.due<today()).length;
-  document.getElementById('samenvatting').textContent=[nb?nb+(nb===1?' cliënt':' cliënten')+' nog bellen':'', nl?nl+' to do'+(nl===1?'':"'s")+' verlopen':'', !open.length?'Niets openstaand':''].filter(Boolean).join(' · ');
-
-  document.getElementById('filters').innerHTML=[['alle','Alles'],...Object.entries(TYPES)].map(([k,v])=>
-    '<span class="chip '+(S.filter===k?'on':'')+'" onclick="setFilter(\''+k+'\')">'+v+'</span>').join('');
-
-  let list=S.todos.filter(t=>S.filter==='alle'||t.type===S.filter);
-  list.sort((a,b)=>(a.done-b.done)||((a.due||'9999')<(b.due||'9999')?-1:1));
-  document.getElementById('todos').innerHTML=list.length?list.map(t=>
-    '<div class="todo '+(t.done?'done':'')+'"><input type="checkbox" '+(t.done?'checked':'')+' onchange="toggle('+t.id+')">'+
+function todoHtml(t){
+  return '<div class="todo '+(t.done?'done':'')+'"><input type="checkbox" '+(t.done?'checked':'')+' onchange="toggle('+t.id+')">'+
     '<div class="txt"><span class="tag t-'+t.type+'">'+TYPES[t.type]+'</span>'+esc(t.txt)+
     '<div class="meta">'+dueHtml(t)+(t.tel?' · '+esc(fmtTel(t.tel)):'')+'</div></div>'+
-    '<button class="small" title="Verwijderen" onclick="del('+t.id+')">✕</button></div>').join('')
-    :'<div class="empty">Niets openstaand.</div>';
+    '<button class="small" title="Verwijderen" onclick="del('+t.id+')">✕</button></div>';
+}
+function zetGetal(id,n,klasse){ const el=$(id); el.querySelector('b').textContent=n; el.className='getal'+(klasse?' '+klasse:''); }
+function render(){
+  const open=S.todos.filter(t=>!t.done), td=today();
+  const nb=open.filter(t=>t.type==='bellen').length;
+  const nv=open.filter(t=>t.due===td).length, nl=open.filter(t=>t.due&&t.due<td).length;
+  zetGetal('gBel',nb,nb?'let':'rust');
+  zetGetal('gVandaag',nv,nv?'let':'rust');
+  zetGetal('gLaat',nl,nl?'laat':'rust');
+
+  $('filters').innerHTML=[['alle','Alles'],...Object.entries(TYPES)].map(([k,v])=>
+    '<span class="chip '+(S.filter===k?'on':'')+'" onclick="setFilter(\''+k+'\')">'+v+'</span>').join('');
+
+  // gegroepeerd: verlopen, vandaag, later, zonder datum, afgevinkt
+  const list=S.todos.filter(t=>S.filter==='alle'||t.type===S.filter);
+  const groepen=[['Verlopen',t=>!t.done&&t.due&&t.due<td],['Vandaag',t=>!t.done&&t.due===td],
+    ['Later',t=>!t.done&&t.due&&t.due>td],['Zonder datum',t=>!t.done&&!t.due],['Afgevinkt',t=>t.done]];
+  let html='';
+  groepen.forEach(([naam,f])=>{
+    const g=list.filter(f).sort((a,b)=>(a.due||'9999')<(b.due||'9999')?-1:1);
+    if(g.length) html+='<div class="groep">'+naam+'</div>'+g.map(todoHtml).join('');
+  });
+  $('todos').innerHTML=html||'<div class="empty">Niets openstaand.</div>';
 
   const calls=open.filter(t=>t.type==='bellen'&&t.tel);
-  document.getElementById('bellen').innerHTML=calls.length?calls.map(t=>{
+  $('bellen').innerHTML=calls.length?calls.map(t=>{
     const pog=t.pogingen?'<span class="late">'+t.pogingen+'× geprobeerd</span>':'<span style="color:var(--muted)">nog niet gebeld</span>';
     return '<div class="call"><div class="row" style="justify-content:space-between"><b>'+esc(t.txt)+'</b><span class="k" style="font-size:12px">'+pog+'</span></div>'+
       '<div class="row" style="margin-top:8px;flex-wrap:wrap"><span class="tel">'+esc(fmtTel(t.tel))+'</span>'+
-      '<button class="k green" onclick="bel('+t.id+')">Bel</button>'+
+      '<button class="k green small" onclick="bel('+t.id+')">Bel</button>'+
       '<button class="k small" onclick="kopieer(\''+t.tel+'\')">Kopieer</button>'+
       '<button class="k small" onclick="poging('+t.id+')">Niet opgenomen</button></div></div>';
-  }).join(''):'<div class="empty">Geen belafspraken. Voeg een to do "Bellen" toe met nummer.</div>';
+  }).join(''):'<div class="empty">Geen belafspraken. Voeg een to do "Bellen" met nummer toe.</div>';
 }
 
-const klad=document.getElementById('klad');
+const klad=$('klad');
 klad.value=S.klad||'';
 klad.addEventListener('input',()=>{S.klad=klad.value;save();});
 
-function hideHint(){ S.hintGedaan=true; save(); document.getElementById('meldingHint').hidden=true; pasToe(); }
-document.getElementById('meldingHint').hidden=!!S.hintGedaan;
+function hideHint(){ S.hintGedaan=true; save(); $('meldingHint').hidden=true; }
+$('meldingHint').hidden=!!S.hintGedaan;
 
 function exportData(){
   const b=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});
@@ -250,25 +280,25 @@ function importData(e){
   r.onload=()=>{ try{ S=JSON.parse(r.result); save(); klad.value=S.klad||''; render(); pasToe(); toast('Back-up teruggezet'); }catch(x){ toast('Dit bestand klopt niet'); } };
   r.readAsText(f);
 }
+
 // ---------- inbox vanuit het Outlook-tabblad (alleen in het geheugen, niet opgeslagen) ----------
 let inboxItems=[];
 function renderInbox(){
-  const el=document.getElementById('inbox');
+  const el=$('inbox');
   if(!inboxItems.length) return;
   const unread=inboxItems.filter(x=>x.u).length;
-  document.getElementById('inboxTijd').textContent=(unread?unread+' ongelezen · ':'')+'bijgewerkt '+new Date().toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'});
-  el.innerHTML=inboxItems.slice(0,6).map((m,i)=>{
+  zetGetal('gMail',unread,unread?'let':'rust');
+  $('inboxTijd').textContent='bijgewerkt '+new Date().toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'});
+  el.innerHTML=inboxItems.slice(0,8).map(m=>{
     const van=m.l[0]||'', onderwerp=m.l[1]||'', rest=m.l.slice(2).join(' · ');
     return '<div class="todo" style="cursor:pointer" onclick="post(\'open:outlook|https://outlook.office.com/mail/\')">'+
       '<span style="width:8px;height:8px;border-radius:50%;margin-top:7px;flex:0 0 auto;background:'+(m.u?'var(--accent)':'var(--line)')+'"></span>'+
-      '<div class="txt" style="min-width:0"><div style="'+(m.u?'font-weight:700':'')+'">'+esc(van)+'</div>'+
+      '<div class="txt"><div style="'+(m.u?'font-weight:700':'')+'">'+esc(van)+'</div>'+
       '<div class="meta" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(onderwerp)+(rest?' · '+esc(rest):'')+'</div></div></div>';
   }).join('');
-  // slim: nieuwe aanmelding in de inbox? Bied een to do aan
   const aan=inboxItems.find(m=>m.u && /aanmeld/i.test(m.l.join(' ')));
-  const tip=document.getElementById('inboxTip');
   const al=aan && S.todos.some(t=>!t.done && /aanmelding/i.test(t.txt) && t.bron===aan.l.join('|'));
-  tip.innerHTML=(aan && !al)?'<div class="note" style="display:flex;gap:8px;align-items:center;background:var(--sun-soft);color:#5a3f0b;padding:8px 10px;border-radius:9px">'+
+  $('inboxTip').innerHTML=(aan && !al)?'<div class="note" style="display:flex;gap:8px;align-items:center;background:var(--sun-soft);color:#5a3f0b;padding:8px 10px;border-radius:9px;margin:0 0 6px">'+
     '<span style="flex:1">Nieuwe aanmelding binnengekomen.</span><button class="small" onclick="aanmeldTodo()">Maak to do</button></div>':'';
 }
 function aanmeldTodo(){
@@ -280,87 +310,132 @@ function aanmeldTodo(){
 if(window.chrome && chrome.webview){
   chrome.webview.addEventListener('message',ev=>{
     const d=String(ev.data||'');
-    if(d.startsWith('paneel:')){
-      const u=d.slice(7), t=document.getElementById('aanmeldTegel'), f=document.getElementById('aanmeldFrame');
-      if(u==='uit'){ t.hidden=true; pasToe(); return; }
-      if(f.getAttribute('src')!==u) f.setAttribute('src',u);
-      return;
-    }
     if(!d.startsWith('inbox:')) return;
     try{ inboxItems=JSON.parse(d.slice(6)); renderInbox(); }catch(e){}
   });
 }
 
-// ---------- tegels: slepen, schalen, onthouden ----------
-const ROW=8, GAP=16, MINW=3;
-const STANDAARD={order:['hint','aanmeld','inbox','todo','bellen','snel','klad','backup'],
-  w:{hint:4,aanmeld:4,inbox:4,todo:4,bellen:4,snel:4,klad:4,backup:4},h:{aanmeld:680}};
-const grid=document.getElementById('grid');
-function kolommen(){ return getComputedStyle(grid).gridTemplateColumns.split(' ').length; }
-function indeling(){
-  if(!S.layout||!Array.isArray(S.layout.order)) S.layout=JSON.parse(JSON.stringify(STANDAARD));
-  STANDAARD.order.forEach(id=>{ if(!S.layout.order.includes(id)) S.layout.order.push(id); });
-  S.layout.w=S.layout.w||{}; S.layout.h=S.layout.h||{};
-  return S.layout;
-}
+// ---------- tegels: vrij plaatsen op een raster, lege plekken mogen ----------
+const KOL=12;
+const STANDAARD={
+  todo:{x:0,y:0,w:5,h:16},
+  inbox:{x:5,y:0,w:7,h:8},
+  bellen:{x:5,y:8,w:4,h:8},
+  snel:{x:9,y:8,w:3,h:8},
+  klad:{x:0,y:16,w:5,h:7}
+};
+const MIN={w:2,h:3};
+const grid=$('grid');
 const tegels={};
-grid.querySelectorAll('[data-tegel]').forEach(c=>{
-  const id=c.dataset.tegel; tegels[id]=c;
-  const h2=c.querySelector('h2');
-  if(h2){ const g=document.createElement('span'); g.className='greep'; g.textContent='⠿'; g.title='Sleep om te verplaatsen'; h2.appendChild(g); g.addEventListener('pointerdown',()=>{ c.draggable=true; }); }
-  const hoek=document.createElement('div'); hoek.className='hoek'; hoek.title='Sleep om groter of kleiner te maken; dubbelklik voor automatische hoogte'; c.appendChild(hoek);
-  hoek.addEventListener('pointerdown',e=>startRekken(e,c,id));
-  hoek.addEventListener('dblclick',()=>{ delete indeling().h[id]; save(); pasToe(); });
-  c.addEventListener('dragstart',e=>{ document.body.classList.add('slepen'); sleep=id; c.classList.add('sleept'); e.dataTransfer.effectAllowed='move'; e.dataTransfer.setData('text/plain',id); });
-  c.addEventListener('dragend',()=>{ document.body.classList.remove('slepen'); c.draggable=false; c.classList.remove('sleept'); sleep=null; document.querySelectorAll('.doel').forEach(x=>x.classList.remove('doel')); });
-  c.addEventListener('dragover',e=>{ if(!sleep||sleep===id) return; e.preventDefault(); c.classList.add('doel'); });
-  c.addEventListener('dragleave',()=>c.classList.remove('doel'));
-  c.addEventListener('drop',e=>{
-    e.preventDefault(); c.classList.remove('doel');
-    if(!sleep||sleep===id) return;
-    const L=indeling(), o=L.order.filter(x=>x!==sleep);
-    const r=c.getBoundingClientRect();
-    const na=(e.clientX>r.left+r.width/2) || (e.clientY>r.top+r.height*0.75);
-    o.splice(o.indexOf(id)+(na?1:0),0,sleep);
-    L.order=o; save(); pasToe();
-  });
-  new ResizeObserver(()=>rijen(c)).observe(c);
-});
-document.addEventListener('pointerup',()=>{ Object.values(tegels).forEach(c=>{ if(!c.classList.contains('sleept')) c.draggable=false; }); });
-let sleep=null;
-function rijen(c){
-  if(c.hidden) return;
-  const h=c.getBoundingClientRect().height;
-  c.style.gridRowEnd='span '+Math.max(1,Math.ceil((h+GAP)/ROW));
+grid.querySelectorAll('[data-tegel]').forEach(c=>{ tegels[c.dataset.tegel]=c; });
+
+function indeling(){
+  if(!S.plek || typeof S.plek!=='object') S.plek=JSON.parse(JSON.stringify(STANDAARD));
+  Object.keys(STANDAARD).forEach(id=>{ if(!S.plek[id]) S.plek[id]=Object.assign({},STANDAARD[id]); });
+  return S.plek;
+}
+function maat(){
+  const cs=getComputedStyle(grid), gap=parseFloat(cs.columnGap)||14, rij=parseFloat(cs.gridAutoRows)||20;
+  const kolB=(grid.clientWidth-gap*(KOL-1))/KOL;
+  return {gap,rij,kolB};
 }
 function pasToe(){
-  const L=indeling(), n=kolommen();
-  L.order.forEach((id,i)=>{
-    const c=tegels[id]; if(!c) return;
-    c.style.order=i;
-    c.style.gridColumnEnd='span '+Math.min(n,Math.max(MINW,L.w[id]||4));
-    if(L.h[id]){ c.style.height=L.h[id]+'px'; c.classList.add('vast'); }
-    else { c.style.height=''; c.classList.remove('vast'); }
-    rijen(c);
+  const P=indeling();
+  Object.keys(tegels).forEach(id=>{
+    const c=tegels[id], p=P[id];
+    c.hidden=!!p.weg;
+    c.style.gridColumn=(p.x+1)+' / span '+Math.min(KOL-p.x,p.w);
+    c.style.gridRow=(p.y+1)+' / span '+p.h;
   });
+  const weg=Object.keys(tegels).filter(id=>P[id].weg);
+  $('verborgen').innerHTML=weg.length?'Terugzetten: '+weg.map(id=>'<button class="small" onclick="toonTegel(\''+id+'\')">+ '+esc(tegels[id].dataset.naam)+'</button>').join(''):'';
 }
-function startRekken(e,c,id){
-  e.preventDefault(); e.stopPropagation();
-  const L=indeling(), n=kolommen();
-  const kolB=(grid.clientWidth-GAP*(n-1))/n;
-  const r=c.getBoundingClientRect(), x0=e.clientX, y0=e.clientY;
-  c.classList.add('rekt'); document.body.classList.add('slepen');
-  const zet=ev=>{
-    const w=Math.round((r.width+ev.clientX-x0+GAP)/(kolB+GAP));
-    L.w[id]=Math.min(n,Math.max(MINW,w));
-    L.h[id]=Math.max(110,Math.round(r.height+ev.clientY-y0));
-    pasToe();
-  };
-  const klaar=()=>{ document.removeEventListener('pointermove',zet); document.removeEventListener('pointerup',klaar); c.classList.remove('rekt'); document.body.classList.remove('slepen'); save(); };
-  document.addEventListener('pointermove',zet); document.addEventListener('pointerup',klaar);
+const overlapt=(a,b)=>a.x<b.x+b.w && b.x<a.x+a.w && a.y<b.y+b.h && b.y<a.y+a.h;
+// tegels die in de weg zitten schuiven naar beneden; verder blijft alles staan
+function maakRuimte(vast){
+  const P=indeling(), ids=Object.keys(P).filter(id=>!P[id].weg && tegels[id]);
+  for(let n=0;n<300;n++){
+    let botsing=false;
+    ids.sort((a,b)=>P[a].y-P[b].y);
+    for(const a of ids) for(const b of ids){
+      if(a===b || !overlapt(P[a],P[b])) continue;
+      let schuif=b, blok=a;
+      if(b===vast){ schuif=a; blok=b; }
+      else if(a!==vast && P[a].y>P[b].y){ schuif=a; blok=b; }
+      P[schuif].y=P[blok].y+P[blok].h; botsing=true;
+    }
+    if(!botsing) break;
+  }
 }
-function herstelIndeling(){ S.layout=JSON.parse(JSON.stringify(STANDAARD)); save(); pasToe(); toast('Indeling hersteld'); }
-window.addEventListener('resize',pasToe);
+function bewerk(aan){
+  document.body.classList.toggle('bewerk',aan);
+  $('bewerkKnop').textContent=aan?'Klaar':'Indeling aanpassen';
+  pasToe();
+}
+function toonTegel(id){
+  const P=indeling(); delete P[id].weg;
+  const onder=Math.max(0,...Object.keys(P).filter(k=>!P[k].weg&&k!==id).map(k=>P[k].y+P[k].h));
+  P[id].x=0; P[id].y=onder; save(); pasToe();
+}
+function herstelIndeling(){ S.plek=JSON.parse(JSON.stringify(STANDAARD)); save(); pasToe(); toast('Standaardindeling teruggezet'); }
+function naarTegel(id){ const c=tegels[id]; if(c && !c.hidden){ c.scrollIntoView({behavior:'smooth',block:'center'}); c.animate([{boxShadow:'0 0 0 3px var(--accent)'},{boxShadow:'0 0 0 0 transparent'}],{duration:1200}); } }
+
+let schaduw=null;
+function maakSchaduw(p){
+  if(!schaduw){ schaduw=document.createElement('div'); schaduw.className='schaduw'; grid.appendChild(schaduw); }
+  schaduw.style.gridColumn=(p.x+1)+' / span '+p.w; schaduw.style.gridRow=(p.y+1)+' / span '+p.h;
+}
+function weg(){ if(schaduw){ schaduw.remove(); schaduw=null; } }
+
+Object.keys(tegels).forEach(id=>{
+  const c=tegels[id];
+  const hoek=document.createElement('div'); hoek.className='hoek'; hoek.title='Sleep voor de grootte'; c.appendChild(hoek);
+  const x=document.createElement('button'); x.className='weg'; x.textContent='Verbergen'; c.appendChild(x);
+  x.addEventListener('pointerdown',e=>e.stopPropagation());
+  x.addEventListener('click',e=>{ e.stopPropagation(); indeling()[id].weg=true; save(); pasToe(); });
+
+  // verplaatsen
+  c.addEventListener('pointerdown',e=>{
+    if(!document.body.classList.contains('bewerk') || e.button!==0 || e.target===hoek) return;
+    e.preventDefault();
+    const P=indeling(), p=P[id], m=maat();
+    const gr=grid.getBoundingClientRect(), r=c.getBoundingClientRect();
+    const dx=e.clientX-r.left, dy=e.clientY-r.top;
+    let doel={x:p.x,y:p.y,w:p.w,h:p.h};
+    c.classList.add('beweegt'); maakSchaduw(doel);
+    const beweeg=ev=>{
+      const lx=ev.clientX-gr.left-dx, ly=ev.clientY-grid.getBoundingClientRect().top-dy;
+      doel.x=Math.max(0,Math.min(KOL-p.w,Math.round(lx/(m.kolB+m.gap))));
+      doel.y=Math.max(0,Math.round(ly/(m.rij+m.gap)));
+      maakSchaduw(doel);
+      c.style.transform='translate('+(ev.clientX-e.clientX)+'px,'+(ev.clientY-e.clientY)+'px)';
+    };
+    const los=()=>{
+      document.removeEventListener('pointermove',beweeg); document.removeEventListener('pointerup',los);
+      c.classList.remove('beweegt'); c.style.transform=''; weg();
+      p.x=doel.x; p.y=doel.y; maakRuimte(id); save(); pasToe();
+    };
+    document.addEventListener('pointermove',beweeg); document.addEventListener('pointerup',los);
+  });
+
+  // groter of kleiner
+  hoek.addEventListener('pointerdown',e=>{
+    e.preventDefault(); e.stopPropagation();
+    const P=indeling(), p=P[id], m=maat(), r=c.getBoundingClientRect();
+    let doel={x:p.x,y:p.y,w:p.w,h:p.h};
+    maakSchaduw(doel);
+    const beweeg=ev=>{
+      doel.w=Math.max(MIN.w,Math.min(KOL-p.x,Math.round((r.width+ev.clientX-e.clientX+m.gap)/(m.kolB+m.gap))));
+      doel.h=Math.max(MIN.h,Math.round((r.height+ev.clientY-e.clientY+m.gap)/(m.rij+m.gap)));
+      maakSchaduw(doel);
+    };
+    const los=()=>{
+      document.removeEventListener('pointermove',beweeg); document.removeEventListener('pointerup',los);
+      weg(); p.w=doel.w; p.h=doel.h; maakRuimte(id); save(); pasToe();
+    };
+    document.addEventListener('pointermove',beweeg); document.addEventListener('pointerup',los);
+  });
+});
 
 toggleTel(); render(); pasToe();
 </script>
