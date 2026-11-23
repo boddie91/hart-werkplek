@@ -20,6 +20,7 @@ static class Program
 {
     [DllImport("user32.dll")] static extern bool SetProcessDpiAwarenessContext(IntPtr value);
     [DllImport("user32.dll")] static extern bool SetProcessDPIAware();
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)] static extern IntPtr SendMessage(IntPtr hWnd, int msg, IntPtr wParam, string lParam);
 
     [STAThread]
     static void Main()
@@ -1027,15 +1028,42 @@ class MainForm : Form
         clipList.DragDrop += ClipDragDrop;
         clip.Controls.Add(clipList);
 
+        // invulbalk voor tekst (alleen in het geheugen, niet op schijf)
+        Panel invul = new Panel();
+        invul.Dock = DockStyle.Top;
+        invul.Height = S(40);
+        invul.Padding = new Padding(S(12), S(2), S(12), S(6));
+        TextBox tb = new TextBox();
+        tb.Dock = DockStyle.Fill;
+        tb.Font = new Font("Segoe UI", 10f);
+        tb.BorderStyle = BorderStyle.FixedSingle;
+        tb.HandleCreated += delegate { SendMessage(tb.Handle, 0x1501, (IntPtr)1, "Typ of plak tekst en druk Enter"); };
+        Button plus = KlembordIcoon("\uE710", "Tekst toevoegen aan het klembord");
+        plus.Dock = DockStyle.Right;
+        plus.Width = S(34);
+        Action voeg = delegate
+        {
+            string tx = tb.Text.Trim();
+            if (tx.Length == 0) { try { if (Clipboard.ContainsText()) tx = Clipboard.GetText().Trim(); } catch { } }
+            if (tx.Length == 0) return;
+            VoegTekstToe(tx);
+            tb.Clear();
+        };
+        plus.Click += delegate { voeg(); };
+        tb.KeyDown += delegate(object s2, KeyEventArgs e2) { if (e2.KeyCode == Keys.Enter) { e2.SuppressKeyPress = true; voeg(); } };
+        invul.Controls.Add(tb);
+        invul.Controls.Add(plus);
+
         Label hint = new Label();
         clipHint = hint;
         hint.Dock = DockStyle.Top;
-        hint.Height = S(64);
+        hint.Height = S(76);
         hint.Padding = new Padding(S(14), 0, S(14), 0);
         hint.ForeColor = Muted;
         hint.Font = new Font("Segoe UI", 9f);
         hint.Text = ClipUitleg;
         clip.Controls.Add(hint);
+        clip.Controls.Add(invul);
 
         Panel head = new Panel();
         head.Dock = DockStyle.Top;
@@ -1205,7 +1233,7 @@ class MainForm : Form
 
     Label clipHint;
     System.Windows.Forms.Timer meldingTimer;
-    const string ClipUitleg = "Downloads komen hier binnen. Sleep een bestand naar James om het te uploaden. Na 1 dag wordt het vanzelf gewist.";
+    const string ClipUitleg = "Tekst: plak bovenin, klik erop om weer te kopiëren. Bestanden: sleep naar James. Bestanden gaan na 1 dag weg, tekst bij het afsluiten.";
 
     void ToonMelding(string tekst)
     {
@@ -1222,7 +1250,7 @@ class MainForm : Form
             meldingTimer.Tick += delegate
             {
                 meldingTimer.Stop();
-                clipHint.Height = S(64);
+                clipHint.Height = S(76);
                 clipHint.ForeColor = Muted;
                 clipHint.Text = ClipUitleg;
             };
@@ -1246,7 +1274,7 @@ class MainForm : Form
 
     void ClipDragEnter(object sender, DragEventArgs e)
     {
-        bool ok = e.Data.GetDataPresent(DataFormats.FileDrop) || e.Data.GetDataPresent("FileGroupDescriptorW") || DropUrl(e.Data) != null;
+        bool ok = e.Data.GetDataPresent(DataFormats.FileDrop) || e.Data.GetDataPresent("FileGroupDescriptorW") || DropUrl(e.Data) != null || e.Data.GetDataPresent(DataFormats.UnicodeText);
         e.Effect = ok ? DragDropEffects.Copy : DragDropEffects.None;
     }
 
@@ -1266,6 +1294,13 @@ class MainForm : Form
         }
         if (nieuw.Count == 0 && e.Data.GetDataPresent("FileGroupDescriptorW")) SaveVirtualFiles(e.Data, nieuw);
         string url = DropUrl(e.Data);
+        if (nieuw.Count == 0 && url == null && files == null && e.Data.GetDataPresent(DataFormats.UnicodeText))
+        {
+            // losse tekst (bijv. geselecteerd in James of Outlook): als tekstknipsel bewaren
+            string tx = e.Data.GetData(DataFormats.UnicodeText) as string;
+            if (!string.IsNullOrEmpty(tx) && tx.Trim().Length > 0) VoegTekstToe(tx.Trim());
+            return;
+        }
         VerwerkDrop(nieuw, url);
     }
 
@@ -1931,6 +1966,7 @@ class MainForm : Form
         if (clipList == null) return;
         clipList.SuspendLayout();
         clipList.Controls.Clear();
+        for (int i = knipsels.Count - 1; i >= 0; i--) clipList.Controls.Add(KnipselItem(knipsels[i]));
         string[] files = Directory.GetFiles(clipDir);
         Array.Sort(files, delegate(string a, string b) { return File.GetLastWriteTime(b).CompareTo(File.GetLastWriteTime(a)); });
         foreach (string f in files)
@@ -1941,7 +1977,7 @@ class MainForm : Form
         if (clipList.Controls.Count == 0)
         {
             Label l = new Label();
-            l.Text = "Nog leeg. Download iets in reMarkable of Outlook, of sleep hier een bestand heen.";
+            l.Text = "Nog leeg. Plak bovenin een tekst, download iets in reMarkable of Outlook, of sleep hier een bestand of tekst heen.";
             l.ForeColor = Muted;
             l.Font = new Font("Segoe UI", 9.5f, FontStyle.Italic);
             l.Width = S(248);
@@ -1961,40 +1997,50 @@ class MainForm : Form
         p.BackColor = Chip;
         p.Cursor = Cursors.SizeAll;
 
+        p.Height = S(64);
+        bool pdf = path.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase);
+        Label soort = new Label();
+        soort.Text = pdf ? "\uEA90" : "\uE8A5";
+        soort.Font = new Font("Segoe MDL2 Assets", 16f);
+        soort.ForeColor = pdf ? Accent : Muted;
+        soort.TextAlign = ContentAlignment.MiddleCenter;
+        soort.Location = new Point(S(4), S(12));
+        soort.Size = new Size(S(34), S(34));
+        p.Controls.Add(soort);
+
         Label name = new Label();
         name.Text = Path.GetFileName(path);
         name.Font = new Font("Segoe UI Semibold", 9.5f);
         name.ForeColor = Ink;
         name.AutoEllipsis = true;
-        name.Location = new Point(S(10), S(8));
-        name.Size = new Size(S(230), S(20));
+        name.Location = new Point(S(40), S(10));
+        name.Size = new Size(S(206), S(20));
         p.Controls.Add(name);
 
         Label meta = new Label();
-        meta.Text = "sleep naar James of klik op Open  ·  " + File.GetLastWriteTime(path).ToString("HH:mm");
+        meta.Text = "sleep naar James  ·  " + File.GetLastWriteTime(path).ToString("HH:mm");
         meta.Font = new Font("Segoe UI", 8.5f);
         meta.ForeColor = Muted;
-        meta.Location = new Point(S(10), S(28));
-        meta.Size = new Size(S(230), S(18));
+        meta.Location = new Point(S(40), S(32));
+        meta.Size = new Size(S(110), S(18));
         p.Controls.Add(meta);
 
-        Button open = SmallButton("Open");
-        open.Size = new Size(S(56), S(26));
-        open.Location = new Point(S(10), S(48));
+        Button open = KlembordIcoon("\uE8A7", "Openen");
+        open.Location = new Point(S(150), S(30));
         open.Click += delegate { try { Process.Start(path); } catch (Exception ex) { MessageBox.Show(this, "Openen lukte niet.\n\n" + ex.Message, "Hart Werkplek"); } };
         p.Controls.Add(open);
 
-        Button copy = SmallButton("Pad");
-        copy.Size = new Size(S(50), S(26));
-        copy.Location = new Point(S(70), S(48));
-        copy.Click += delegate { Clipboard.SetText(path); };
+        Button copy = KlembordIcoon("\uE8C8", "Kopieer de bestandslocatie (plakken in James bij 'bestand kiezen')");
+        copy.Location = new Point(S(182), S(30));
+        copy.Click += delegate { Clipboard.SetText(path); Bevestig(copy); };
         p.Controls.Add(copy);
 
-        Button done = SmallButton("Klaar");
-        done.Size = new Size(S(56), S(26));
-        done.Location = new Point(S(124), S(48));
+        Button done = KlembordIcoon("\uE74D", "Weghalen");
+        done.Location = new Point(S(214), S(30));
         done.Click += delegate { try { File.Delete(path); } catch { } RefreshClips(); };
         p.Controls.Add(done);
+        soort.MouseDown += delegate(object s3, MouseEventArgs e3) { if (e3.Button == MouseButtons.Left) p.DoDragDrop(new DataObject(DataFormats.FileDrop, new string[] { path }), DragDropEffects.Copy); };
+        soort.Cursor = Cursors.SizeAll;
 
         MouseEventHandler drag = delegate(object s, MouseEventArgs e)
         {
@@ -2007,6 +2053,98 @@ class MainForm : Form
         meta.MouseDown += drag;
         name.Cursor = Cursors.SizeAll;
         meta.Cursor = Cursors.SizeAll;
+        return p;
+    }
+
+    // ---------- tekstknipsels op het klembord (alleen in het geheugen) ----------
+    List<string> knipsels = new List<string>();
+
+    void VoegTekstToe(string tekst)
+    {
+        knipsels.Remove(tekst);
+        knipsels.Add(tekst);
+        while (knipsels.Count > 20) knipsels.RemoveAt(0);
+        if (!clip.Visible) { clip.Visible = true; StyleClipButton(); }
+        RefreshClips();
+    }
+
+    Button KlembordIcoon(string glyph, string tip)
+    {
+        Button b = new Button();
+        b.Text = glyph;
+        b.Font = new Font("Segoe MDL2 Assets", 10.5f);
+        b.Size = new Size(S(30), S(28));
+        b.FlatStyle = FlatStyle.Flat;
+        b.FlatAppearance.BorderSize = 0;
+        b.FlatAppearance.MouseOverBackColor = Color.White;
+        b.ForeColor = Ink;
+        b.BackColor = Color.Transparent;
+        b.Cursor = Cursors.Hand;
+        b.AccessibleName = tip;
+        tips.SetToolTip(b, tip);
+        return b;
+    }
+
+    // even een vinkje laten zien na kopiëren
+    void Bevestig(Button b)
+    {
+        string oud = b.Text;
+        Color kleur = b.ForeColor;
+        b.Text = "\uE73E";
+        b.ForeColor = Color.FromArgb(47, 122, 85);
+        System.Windows.Forms.Timer t = new System.Windows.Forms.Timer();
+        t.Interval = 1200;
+        t.Tick += delegate { t.Stop(); t.Dispose(); if (!b.IsDisposed) { b.Text = oud; b.ForeColor = kleur; } };
+        t.Start();
+    }
+
+    Control KnipselItem(string tekst)
+    {
+        Panel p = new Panel();
+        p.Width = S(250);
+        p.Height = S(70);
+        p.Margin = new Padding(0, 0, 0, S(8));
+        p.BackColor = AccentSoft;
+        p.Cursor = Cursors.Hand;
+
+        Label icoon = new Label();
+        icoon.Text = "\uE70B";
+        icoon.Font = new Font("Segoe MDL2 Assets", 14f);
+        icoon.ForeColor = Accent;
+        icoon.TextAlign = ContentAlignment.MiddleCenter;
+        icoon.Location = new Point(S(4), S(8));
+        icoon.Size = new Size(S(34), S(30));
+        p.Controls.Add(icoon);
+
+        Label l = new Label();
+        l.Text = tekst.Replace("\r", "").Replace("\n", " ");
+        l.Font = new Font("Segoe UI", 9f);
+        l.ForeColor = Ink;
+        l.AutoEllipsis = true;
+        l.Location = new Point(S(40), S(8));
+        l.Size = new Size(S(172), S(54));
+        l.Cursor = Cursors.Hand;
+        p.Controls.Add(l);
+        tips.SetToolTip(l, tekst.Length > 400 ? tekst.Substring(0, 400) + "…" : tekst);
+
+        Button kopie = KlembordIcoon("\uE8C8", "Kopiëren");
+        kopie.Location = new Point(S(214), S(6));
+        p.Controls.Add(kopie);
+        Button weg = KlembordIcoon("\uE74D", "Weghalen");
+        weg.Location = new Point(S(214), S(36));
+        weg.Click += delegate { knipsels.Remove(tekst); RefreshClips(); };
+        p.Controls.Add(weg);
+
+        EventHandler kopieer = delegate { try { Clipboard.SetText(tekst); Bevestig(kopie); } catch { } };
+        kopie.Click += kopieer;
+        l.Click += kopieer;
+        // ook rechtstreeks in een veld in James te slepen
+        icoon.MouseDown += delegate(object s5, MouseEventArgs e5)
+        {
+            if (e5.Button == MouseButtons.Left) p.DoDragDrop(new DataObject(DataFormats.UnicodeText, tekst), DragDropEffects.Copy);
+        };
+        icoon.Cursor = Cursors.SizeAll;
+        tips.SetToolTip(icoon, "Sleep naar een veld, of klik om te kopiëren");
         return p;
     }
 

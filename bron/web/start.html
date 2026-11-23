@@ -71,6 +71,14 @@ input,select,textarea{font:inherit;border:1px solid var(--line);border-radius:9p
 .t-terugkoppeling{background:var(--ok-soft);color:var(--ok)}.t-intake{background:var(--sun-soft);color:var(--sun)}.t-overig{background:#eee;color:#555}
 .tel{font-size:17px;font-weight:700;letter-spacing:.04em;font-variant-numeric:tabular-nums}
 .call{padding:10px 12px;border:1px solid var(--line);border-radius:10px;margin-bottom:8px}
+.call.later{opacity:.6}
+.call .knoppen{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.call .knoppen button{min-height:30px;padding:0 10px;font-size:13px}
+.uitkomst{background:var(--chip)}
+.redenen{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 10px}
+.logregel{font-size:12px;color:var(--muted);margin-top:6px}
+.waarschuw{font-size:12px;background:#fdeee6;color:#8a3a10;border-radius:8px;padding:6px 8px;margin-top:6px}
+.icoon{font-family:"Segoe MDL2 Assets","Segoe UI Symbol";font-size:13px;vertical-align:-1px;margin-right:4px}
 .empty{color:var(--muted);font-style:italic;padding:6px 0}
 .hint{background:var(--sun-soft);border:1px solid #f1dfb5;color:#5a3f0b;line-height:1.5;border-radius:14px;padding:12px 16px;margin-bottom:var(--gap);display:flex;gap:14px;align-items:center;flex-wrap:wrap}
 .hint p{margin:0;flex:1;min-width:280px}
@@ -119,7 +127,6 @@ input,select,textarea{font:inherit;border:1px solid var(--line);border-radius:9p
       <h2>To do's <small>alleen voornaam of initialen</small></h2>
       <div class="row" style="margin-bottom:8px">
         <select id="nType" class="k" style="width:150px" onchange="toggleTel()">
-          <option value="bellen">Bellen</option>
           <option value="intake">Intake</option>
           <option value="verslag">Verslag</option>
           <option value="terugkoppeling">Terugkoppeling</option>
@@ -128,7 +135,7 @@ input,select,textarea{font:inherit;border:1px solid var(--line);border-radius:9p
         <input id="nTxt" placeholder="Wat?" onkeydown="if(event.key==='Enter')addTodo()">
       </div>
       <div class="row">
-        <input id="nTel" placeholder="Telefoonnummer (plak uit James)" inputmode="tel">
+        <input id="nTel" style="display:none">
         <input id="nDue" type="date" class="k" style="width:150px" title="Uiterlijk">
         <button class="k primary" onclick="addTodo()">Toevoegen</button>
       </div>
@@ -142,7 +149,9 @@ input,select,textarea{font:inherit;border:1px solid var(--line);border-radius:9p
       <div id="inbox"><div class="empty">Open één keer het tabblad Outlook. Daarna verschijnt je inbox hier vanzelf.</div></div>
     </div>
     <div class="card" data-tegel="bellen" data-naam="Nog bellen">
-      <h2>Nog bellen <small>via je iPhone</small></h2>
+      <h2>Bellen <small>via je iPhone</small></h2>
+      <input id="bNieuw" placeholder="Plak naam en nummer uit James en druk Enter" onkeydown="if(event.key==='Enter')belToevoegen()">
+      <div class="redenen" id="redenen"></div>
       <div id="bellen"></div>
     </div>
     <div class="card" data-tegel="snel" data-naam="Snel naar">
@@ -190,8 +199,8 @@ const TYPES={bellen:'Bellen',intake:'Intake',verslag:'Verslag',terugkoppeling:'T
 const dag=d=>{ d=new Date(d); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,10); };
 const today=()=>dag(new Date());
 const clean=t=>t.replace(/[^\d+]/g,'');
-function fmtTel(t){const c=clean(t); if(/^06\d{8}$/.test(c)) return c.replace(/^(06)(\d{2})(\d{2})(\d{2})(\d{2})$/,'$1 $2 $3 $4 $5'); return c.replace(/(\d{3})(?=\d)/g,'$1 ');}
-function toggleTel(){ $('nTel').style.display = $('nType').value==='bellen' ? '' : 'none'; }
+function fmtTel(t){const c=clean(t); if(/^06\d{8}$/.test(c)) return c.replace(/^(06)(\d{2})(\d{2})(\d{2})(\d{2})$/,'$1 $2 $3 $4 $5'); if(/^\+316\d{8}$/.test(c)) return c.replace(/^\+31(6)(\d{2})(\d{2})(\d{2})(\d{2})$/,'+31 $1 $2 $3 $4 $5'); return c.replace(/(\d{3})(?=\d)/g,'$1 ');}
+function toggleTel(){}
 
 function addTodo(){
   const type=$('nType').value, txt=$('nTxt').value.trim(), tel=clean($('nTel').value), due=$('nDue').value;
@@ -204,11 +213,6 @@ function byId(id){ return S.todos.find(x=>x.id===id); }
 function toggle(id){ const t=byId(id); t.done=!t.done; save(); render(); }
 function del(id){ S.todos=S.todos.filter(x=>x.id!==id); save(); render(); }
 function nextWorkday(){ const d=new Date(); do{ d.setDate(d.getDate()+1); }while(d.getDay()===0||d.getDay()===6); return dag(d); }
-function poging(id){
-  const t=byId(id); t.pogingen=(t.pogingen||0)+1; t.laatste=new Date().toISOString();
-  if(!t.due || t.due<=today()) t.due=nextWorkday();
-  save(); render(); toast('Genoteerd. Staat weer op de lijst voor '+new Date(t.due+'T12:00').toLocaleDateString('nl-NL',{weekday:'long'}));
-}
 function bel(id){ const t=byId(id); location.href='tel:'+t.tel; }
 function kopieer(n){ navigator.clipboard.writeText(n).then(()=>toast('Nummer gekopieerd')); }
 function clearDone(){ S.todos=S.todos.filter(x=>!x.done); save(); render(); }
@@ -231,17 +235,18 @@ function todoHtml(t){
 function zetGetal(id,n,klasse){ const el=$(id); el.querySelector('b').textContent=n; el.className='getal'+(klasse?' '+klasse:''); }
 function render(){
   const open=S.todos.filter(t=>!t.done), td=today();
-  const nb=open.filter(t=>t.type==='bellen').length;
-  const nv=open.filter(t=>t.due===td).length, nl=open.filter(t=>t.due&&t.due<td).length;
+  const nb=open.filter(t=>t.type==='bellen' && nuAanDeBeurt(t)).length;
+  const taken=open.filter(t=>t.type!=='bellen');
+  const nv=taken.filter(t=>t.due===td).length, nl=taken.filter(t=>t.due&&t.due<td).length;
   zetGetal('gBel',nb,nb?'let':'rust');
   zetGetal('gVandaag',nv,nv?'let':'rust');
   zetGetal('gLaat',nl,nl?'laat':'rust');
 
-  $('filters').innerHTML=[['alle','Alles'],...Object.entries(TYPES)].map(([k,v])=>
+  $('filters').innerHTML=[['alle','Alles'],...Object.entries(TYPES).filter(([k])=>k!=='bellen')].map(([k,v])=>
     '<span class="chip '+(S.filter===k?'on':'')+'" onclick="setFilter(\''+k+'\')">'+v+'</span>').join('');
 
   // gegroepeerd: verlopen, vandaag, later, zonder datum, afgevinkt
-  const list=S.todos.filter(t=>S.filter==='alle'||t.type===S.filter);
+  const list=S.todos.filter(t=>t.type!=='bellen' && (S.filter==='alle'||t.type===S.filter));
   const groepen=[['Verlopen',t=>!t.done&&t.due&&t.due<td],['Vandaag',t=>!t.done&&t.due===td],
     ['Later',t=>!t.done&&t.due&&t.due>td],['Zonder datum',t=>!t.done&&!t.due],['Afgevinkt',t=>t.done]];
   let html='';
@@ -251,15 +256,7 @@ function render(){
   });
   $('todos').innerHTML=html||'<div class="empty">Niets openstaand.</div>';
 
-  const calls=open.filter(t=>t.type==='bellen'&&t.tel);
-  $('bellen').innerHTML=calls.length?calls.map(t=>{
-    const pog=t.pogingen?'<span class="late">'+t.pogingen+'× geprobeerd</span>':'<span style="color:var(--muted)">nog niet gebeld</span>';
-    return '<div class="call"><div class="row" style="justify-content:space-between"><b>'+esc(t.txt)+'</b><span class="k" style="font-size:12px">'+pog+'</span></div>'+
-      '<div class="row" style="margin-top:8px;flex-wrap:wrap"><span class="tel">'+esc(fmtTel(t.tel))+'</span>'+
-      '<button class="k green small" onclick="bel('+t.id+')">Bel</button>'+
-      '<button class="k small" onclick="kopieer(\''+t.tel+'\')">Kopieer</button>'+
-      '<button class="k small" onclick="poging('+t.id+')">Niet opgenomen</button></div></div>';
-  }).join(''):'<div class="empty">Geen belafspraken. Voeg een to do "Bellen" met nummer toe.</div>';
+  renderBellen();
 }
 
 const klad=$('klad');
@@ -320,7 +317,7 @@ const KOL=12;
 const STANDAARD={
   todo:{x:0,y:0,w:5,h:16},
   inbox:{x:5,y:0,w:7,h:8},
-  bellen:{x:5,y:8,w:4,h:8},
+  bellen:{x:5,y:8,w:4,h:14},
   snel:{x:9,y:8,w:3,h:8},
   klad:{x:0,y:16,w:5,h:7}
 };
@@ -437,6 +434,87 @@ Object.keys(tegels).forEach(id=>{
   });
 });
 
+
+// ---------- bellen: zo min mogelijk noteren ----------
+const REDENEN=['Intake plannen','Terugbellen','Afspraak verzetten','Vervolg bespreken','Anders'];
+let reden=REDENEN[0];
+const UIT={ggh:'geen gehoor',vm:'voicemail ingesproken',terug:'belt zelf terug',ok:'gesproken'};
+function tekenRedenen(){
+  $('redenen').innerHTML=REDENEN.map(x=>'<span class="chip '+(x===reden?'on':'')+'" onclick="kiesReden(\''+x+'\')">'+x+'</span>').join('');
+}
+function kiesReden(x){ reden=x; tekenRedenen(); $('bNieuw').focus(); }
+function belToevoegen(){
+  const raw=$('bNieuw').value.trim(); if(!raw) return;
+  const m=raw.match(/(\+31|0031|0)[\s\-.]?\d(?:[\s\-.]?\d){8}/);
+  const tel=m?clean(m[0]).replace(/^0031/,'+31'):'';
+  let naam=(m?raw.replace(m[0],' '):raw).replace(/\b(tel(efoon)?|mobiel|nr)\b[:.]?/gi,' ').replace(/[\s,;:|\-–]+/g,' ').trim();
+  if(!naam) naam='(geen naam)';
+  if(!tel){ toast('Geen telefoonnummer gevonden. Plak naam én nummer.'); return; }
+  S.todos.unshift({id:Date.now(),type:'bellen',txt:naam,tel,reden,due:'',done:false,pogingen:0,log:[]});
+  $('bNieuw').value=''; save(); render(); toast('Staat op je bellijst');
+}
+function volgendeWerkdag(d,n){ d=new Date(d); let k=0; while(k<n){ d.setDate(d.getDate()+1); if(d.getDay()!==0&&d.getDay()!==6) k++; } return d; }
+function op(d,u,m){ d=new Date(d); d.setHours(u,m,0,0); return d; }
+function nuAanDeBeurt(t){ return !t.volgende || new Date(t.volgende)<=new Date(); }
+function uitkomst(id,u){
+  const t=byId(id), nu=new Date();
+  t.log=t.log||[]; t.log.push({t:nu.toISOString(),u});
+  if(u==='ok'){ t.done=true; t.volgende=''; save(); render(); toast('Afgerond. Notitie voor James staat klaar: klik op de kopieerknop bij Afgerond.'); return; }
+  t.pogingen=(t.pogingen||0)+1;
+  let v;
+  if(u==='terug') v=op(volgendeWerkdag(nu,2),9,30);
+  else v = nu.getHours()<12 ? op(nu,13,30) : op(volgendeWerkdag(nu,1),9,30);
+  t.volgende=v.toISOString();
+  save(); render();
+  toast('Opnieuw proberen: '+wanneer(v));
+}
+function wanneer(d){
+  d=new Date(d); const nu=new Date(), morgen=volgendeWerkdag(nu,1);
+  const uur=d.toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'});
+  if(dag(d)===dag(nu)) return 'vandaag '+uur;
+  if(dag(d)===dag(morgen)) return d.toLocaleDateString('nl-NL',{weekday:'long'})+' '+uur;
+  return d.toLocaleDateString('nl-NL',{weekday:'long',day:'numeric',month:'short'})+' '+uur;
+}
+function kort(d){ d=new Date(d); return d.toLocaleDateString('nl-NL',{day:'2-digit',month:'2-digit'})+' '+d.toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'}); }
+function notitie(t){
+  const r=(t.log||[]).map(x=>kort(x.t)+' '+UIT[x.u]).join('; ');
+  return 'Telefonisch contact'+(t.reden?' ('+t.reden.toLowerCase()+')':'')+': '+r+'.';
+}
+function kopieerNotitie(id){ navigator.clipboard.writeText(notitie(byId(id))).then(()=>toast('Notitie gekopieerd, plak hem in James')); }
+function belKaart(t,later){
+  const log=t.log||[];
+  const mis=log.filter(x=>x.u!=='ok').length;
+  let h='<div class="call'+(later?' later':'')+'"><div class="row" style="justify-content:space-between;align-items:baseline"><span><b>'+esc(t.txt)+'</b> '+
+    (t.reden?'<span class="tag t-bellen">'+esc(t.reden)+'</span>':'')+'</span>'+
+    '<button class="small k" title="Weghalen" onclick="del('+t.id+')" style="min-height:26px">✕</button></div>';
+  h+='<div class="row" style="margin-top:6px;flex-wrap:wrap;justify-content:flex-start"><span class="tel k">'+esc(fmtTel(t.tel))+'</span>'+
+    (t.tel?'<button class="k green small" onclick="bel('+t.id+')"><span class="icoon"></span>Bel</button><button class="k small" title="Nummer kopiëren" onclick="kopieer(\''+t.tel+'\')"><span class="icoon" style="margin:0"></span></button>':'')+'</div>';
+  if(t.done){
+    h+='<div class="knoppen"><button onclick="kopieerNotitie('+t.id+')"><span class="icoon"></span>Notitie voor James</button><button onclick="del('+t.id+')">Klaar</button></div>';
+  } else {
+    h+='<div class="knoppen"><span style="font-size:12px;color:var(--muted);align-self:center">Hoe ging het?</span>'+
+      '<button class="uitkomst" onclick="uitkomst('+t.id+',\'ok\')"><span class="icoon"></span>Gesproken</button>'+
+      '<button class="uitkomst" onclick="uitkomst('+t.id+',\'ggh\')">Geen gehoor</button>'+
+      '<button class="uitkomst" onclick="uitkomst('+t.id+',\'vm\')">Voicemail</button>'+
+      '<button class="uitkomst" onclick="uitkomst('+t.id+',\'terug\')">Belt terug</button></div>';
+  }
+  if(log.length) h+='<div class="logregel">'+log.map(x=>kort(x.t)+' '+UIT[x.u]).join(' · ')+
+    (log.length&&!t.done?' <button class="small" style="min-height:22px;padding:0 6px;font-size:11.5px;margin-left:4px" onclick="kopieerNotitie('+t.id+')">kopieer voor James</button>':'')+'</div>';
+  if(later) h+='<div class="logregel"><b>Opnieuw: '+wanneer(t.volgende)+'</b></div>';
+  if(!t.done && mis>=3) h+='<div class="waarschuw">'+mis+'× niet bereikt. Stuur een mail of sms, of laat het de verwijzer weten. De notitie voor James kun je hierboven kopiëren.</div>';
+  return h+'</div>';
+}
+function renderBellen(){
+  const b=S.todos.filter(t=>t.type==='bellen');
+  const nu=b.filter(t=>!t.done&&nuAanDeBeurt(t)).sort((x,y)=>x.id-y.id), later=b.filter(t=>!t.done&&!nuAanDeBeurt(t)).sort((x,y)=>x.volgende<y.volgende?-1:1), af=b.filter(t=>t.done);
+  let h='';
+  if(nu.length) h+='<div class="groep">Nu bellen</div>'+nu.map(t=>belKaart(t,false)).join('');
+  if(later.length) h+='<div class="groep">Later opnieuw</div>'+later.map(t=>belKaart(t,true)).join('');
+  if(af.length) h+='<div class="groep">Afgerond</div>'+af.map(t=>belKaart(t,false)).join('');
+  $('bellen').innerHTML=h||'<div class="empty">Niemand te bellen. Kopieer in James naam en nummer en plak ze hierboven.</div>';
+}
+tekenRedenen();
+setInterval(()=>render(),60000);
 toggleTel(); render(); pasToe();
 </script>
 </body>
