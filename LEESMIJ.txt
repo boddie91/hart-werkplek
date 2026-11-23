@@ -79,3 +79,6 @@ Versie 14
 
 Versie 15
 - Voorbereiding slepen uit reMarkable: lukt het slepen nog niet, dan zet het programma reMarkable-sleepinfo.txt op je bureaublad (zonder documentnamen). Stuur dat naar Claude.
+
+Versie 16
+- Sleep een document uit het tabblad reMarkable naar het klembord: het programma opent het document even in een eigen venster, maakt er een pdf van en zet die op het klembord.

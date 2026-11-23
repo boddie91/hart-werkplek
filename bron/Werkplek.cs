@@ -997,6 +997,7 @@ class MainForm : Form
     var types = []; try { types = Array.prototype.slice.call(e.dataTransfer.types); } catch(x) {}
     var links = []; try { var ul = e.dataTransfer.getData('text/uri-list'); if (ul) links = ul.split(/\r?\n/).map(clean); } catch(x) {}
     add({ t: 'dragstart', pad: pad, knoppen: knoppen, types: types, links: links });
+    if (links.length) window.__rmSleep = { link: links[0], tijd: Date.now() };
   }, false);
   document.addEventListener('click', function(e){
     var b = e.target.closest ? e.target.closest('button,[role=button],[role=menuitem]') : null;
@@ -1089,7 +1090,8 @@ class MainForm : Form
 
     void ClipDragDrop(object sender, DragEventArgs e)
     {
-        int n = 0;
+        // Eerst alles uit de sleep halen zolang die er nog is; daarna rustig verwerken
+        List<string> nieuw = new List<string>();
         string[] files = e.Data.GetData(DataFormats.FileDrop) as string[];
         if (files != null)
         {
@@ -1097,29 +1099,364 @@ class MainForm : Form
             {
                 if (!File.Exists(f)) continue;
                 if (Path.GetDirectoryName(f).TrimEnd('\\') == clipDir.TrimEnd('\\')) continue;
-                try { File.Copy(f, UniquePath(Path.GetFileName(f))); n++; } catch { }
+                try { string doel = UniquePath(Path.GetFileName(f)); File.Copy(f, doel); nieuw.Add(doel); } catch { }
             }
         }
-        if (n == 0 && e.Data.GetDataPresent("FileGroupDescriptorW"))
+        if (nieuw.Count == 0 && e.Data.GetDataPresent("FileGroupDescriptorW")) SaveVirtualFiles(e.Data, nieuw);
+        string url = DropUrl(e.Data);
+        VerwerkDrop(nieuw, url);
+    }
+
+    static readonly Regex RmDocument = new Regex(@"^https://(app|my)\.remarkable\.com/document/([0-9a-fA-F-]{36})", RegexOptions.Compiled);
+
+    async Task<string> LaatsteRemarkableSleep()
+    {
+        Tab r;
+        if (!tabs.TryGetValue("remarkable", out r) || r.View == null || r.View.CoreWebView2 == null) return null;
+        try
         {
-            List<string> paden = new List<string>();
-            SaveVirtualFiles(e.Data, paden);
-            // Een webpagina in plaats van het bestand zelf (bijv. een link uit reMarkable): niet bewaren
-            bool alleenPagina = paden.Count > 0 && paden.TrueForAll(IsWebpagina);
-            if (alleenPagina) foreach (string pp in paden) { try { File.Delete(pp); } catch { } }
-            else n = paden.Count;
+            string j = await r.View.CoreWebView2.ExecuteScriptAsync(
+                "(function(){var s=window.__rmSleep;window.__rmSleep=null;if(!s||Date.now()-s.tijd>60000)return '';return s.link;})()");
+            if (j != null && j.Length > 1 && j[0] == '"') j = Regex.Unescape(j.Substring(1, j.Length - 2));
+            return string.IsNullOrEmpty(j) ? null : j;
         }
-        if (n == 0)
+        catch { return null; }
+    }
+
+    async void VerwerkDrop(List<string> nieuw, string url)
+    {
+        string link = await LaatsteRemarkableSleep();
+        if ((link == null || !RmDocument.IsMatch(link)) && url != null && RmDocument.IsMatch(url)) link = url;
+        if (link == null || !RmDocument.IsMatch(link))
         {
-            string url = DropUrl(e.Data);
-            if (url != null && LijktBestand(url)) DownloadVanLink(url);
-            else
+            foreach (string p in nieuw)
             {
-                SchrijfSleepInfo(e.Data, url);
-                ToonMelding("Slepen uit reMarkable werkt nog niet: dit was een link, niet de pdf. Op je bureaublad staat nu reMarkable-sleepinfo.txt. Stuur dat naar Claude, dan maak ik het slepen af.");
+                if (!IsWebpagina(p)) continue;
+                try
+                {
+                    Match m = Regex.Match(File.ReadAllText(p), @"https://(app|my)\.remarkable\.com/document/[0-9a-fA-F-]{36}");
+                    if (m.Success) { link = m.Value; break; }
+                }
+                catch { }
             }
+        }
+
+        if (link != null && RmDocument.IsMatch(link))
+        {
+            // Een document uit reMarkable: wat Windows meegaf (link of plaatje) weggooien en een pdf maken
+            foreach (string p in nieuw) { try { File.Delete(p); } catch { } }
+            RefreshClips();
+            MaakRemarkablePdf(RmDocument.Match(link).Value);
+            return;
+        }
+
+        bool alleenPagina = nieuw.Count > 0 && nieuw.TrueForAll(IsWebpagina);
+        if (alleenPagina) { foreach (string p in nieuw) { try { File.Delete(p); } catch { } } nieuw.Clear(); }
+        if (nieuw.Count == 0)
+        {
+            if (url != null && LijktBestand(url)) DownloadVanLink(url);
+            else if (alleenPagina) ToonMelding("Dit was een link naar een pagina, niet een bestand.");
         }
         RefreshClips();
+    }
+
+    // ---------- reMarkable-document als pdf: de website tekent de pagina's, het programma bundelt ze ----------
+    const string RemarkablePdfScript = @"(async function(){
+  var wacht = function(ms){ return new Promise(function(r){ setTimeout(r, ms); }); };
+  var verder = null;
+  chrome.webview.addEventListener('message', function(e){ if (e.data === 'rmverder' && verder) { var f = verder; verder = null; f(); } });
+  var stuur = function(m){ return new Promise(function(r){ verder = r; chrome.webview.postMessage(m); }); };
+  function groot(e){ var r = e.getBoundingClientRect(); return r.width >= 250 && r.height >= 250; }
+  function visuals(){
+    return Array.prototype.filter.call(document.querySelectorAll('canvas,img,svg'), function(e){
+      if (e.tagName.toLowerCase() === 'svg' && e.parentElement && e.parentElement.closest('svg')) return false;
+      return groot(e);
+    });
+  }
+  function scroller(){
+    var best = document.scrollingElement, max = best.scrollHeight - best.clientHeight;
+    document.querySelectorAll('*').forEach(function(el){
+      var cs = getComputedStyle(el);
+      if (!/(auto|scroll)/.test(cs.overflowY)) return;
+      var d = el.scrollHeight - el.clientHeight;
+      if (d > max) { max = d; best = el; }
+    });
+    return best;
+  }
+  function diag(){
+    var tel = {};
+    ['canvas','img','svg','iframe','video','object','embed'].forEach(function(t){ tel[t] = document.getElementsByTagName(t).length; });
+    var grote = [];
+    document.querySelectorAll('body *').forEach(function(e){
+      var r = e.getBoundingClientRect();
+      if (r.width > 250 && r.height > 250) {
+        var c = e.className; c = (c && c.baseVal !== undefined) ? c.baseVal : (c || '');
+        grote.push({ tag: e.tagName, cls: String(c).slice(0, 90), w: Math.round(r.width), h: Math.round(r.height) });
+      }
+    });
+    return { pad: location.pathname.replace(/[0-9a-f-]{36}/g, '<id>'), tel: tel, grote: grote.slice(-25) };
+  }
+  var n = 0;
+  while (!visuals().length && n < 60) { await wacht(500); n++; }
+  if (!visuals().length) { chrome.webview.postMessage('rmfout:' + JSON.stringify(diag())); return; }
+  await wacht(2500);
+  var sc = scroller();
+  var scTop = function(){ return sc === document.scrollingElement ? window.scrollY : sc.scrollTop; };
+  var gedaan = {}, urls = {}, idx = 0;
+  async function pak(){
+    var lijst = visuals().map(function(v){ return { v: v, top: v.getBoundingClientRect().top + scTop() }; }).sort(function(a, b){ return a.top - b.top; });
+    for (var i = 0; i < lijst.length; i++) {
+      var v = lijst[i].v, key = Math.round(lijst[i].top / 20);
+      if (gedaan[key]) continue;
+      v.scrollIntoView({ block: 'center' });
+      await wacht(1000);
+      var url = null, tag = v.tagName.toLowerCase();
+      try {
+        if (tag === 'canvas') url = v.toDataURL('image/png');
+        else if (tag === 'img') {
+          var b = await (await fetch(v.currentSrc || v.src)).blob();
+          url = await new Promise(function(res){ var fr = new FileReader(); fr.onload = function(){ res(fr.result); }; fr.readAsDataURL(b); });
+        } else {
+          var xml = new XMLSerializer().serializeToString(v), rr = v.getBoundingClientRect(), c = document.createElement('canvas');
+          c.width = Math.round(rr.width * 2); c.height = Math.round(rr.height * 2);
+          var im = new Image();
+          await new Promise(function(res, rej){ im.onload = res; im.onerror = rej; im.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(xml); });
+          var g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.drawImage(im, 0, 0, c.width, c.height);
+          url = c.toDataURL('image/png');
+        }
+      } catch (e) { url = null; }
+      gedaan[key] = true;
+      if (url && urls[url]) continue;
+      if (url && url.indexOf('data:image') === 0) { urls[url] = true; await stuur('rmpagina:' + (idx++) + '|' + url); }
+      else {
+        var r = v.getBoundingClientRect(), d = window.devicePixelRatio || 1;
+        await stuur('rmfoto:' + (idx++) + '|' + [r.left * d, r.top * d, r.width * d, r.height * d].map(Math.round).join(','));
+      }
+    }
+  }
+  for (var s = 0; s < 200; s++) {
+    await pak();
+    var voor = scTop();
+    if (sc === document.scrollingElement) window.scrollBy(0, window.innerHeight * 0.8); else sc.scrollTop += sc.clientHeight * 0.8;
+    await wacht(1300);
+    if (Math.abs(scTop() - voor) < 2) break;
+  }
+  await pak();
+  chrome.webview.postMessage('rmklaar:' + idx + '|' + (document.title || ''));
+})();
+";
+
+    void MaakRemarkablePdf(string docUrl)
+    {
+        Form f = new Form();
+        f.Text = "PDF maken van reMarkable-document…";
+        f.Icon = Icon;
+        f.ShowInTaskbar = false;
+        Rectangle wa = Screen.FromControl(this).WorkingArea;
+        int h = (int)(wa.Height * 0.9), w = Math.Min(wa.Width - S(40), (int)(h * 0.8));
+        f.StartPosition = FormStartPosition.Manual;
+        f.Bounds = new Rectangle(wa.Left + (wa.Width - w) / 2, wa.Top + (wa.Height - h) / 2, w, h);
+        WebView2 v = new WebView2();
+        v.Dock = DockStyle.Fill;
+        v.DefaultBackgroundColor = Color.White;
+        f.Controls.Add(v);
+        f.Show(this);
+        f.TopMost = true;
+
+        SortedDictionary<int, Bitmap> paginas = new SortedDictionary<int, Bitmap>();
+        bool klaar = false, gestart = false;
+        System.Windows.Forms.Timer timeout = new System.Windows.Forms.Timer();
+        timeout.Interval = 240000;
+
+        Action<string> stop = delegate(string melding)
+        {
+            if (klaar) return;
+            klaar = true;
+            timeout.Stop();
+            foreach (Bitmap b in paginas.Values) { try { b.Dispose(); } catch { } }
+            try { f.Close(); } catch { }
+            if (melding != null) ToonMelding(melding);
+        };
+        timeout.Tick += delegate { stop("De pdf maken duurde te lang en is gestopt. Probeer het nog een keer."); };
+        f.FormClosed += delegate { if (!klaar) { klaar = true; timeout.Stop(); } };
+        timeout.Start();
+
+        StartRemarkablePdf(v, f, docUrl, paginas, timeout, stop, () => gestart, b => gestart = b);
+    }
+
+    async void StartRemarkablePdf(WebView2 v, Form f, string docUrl, SortedDictionary<int, Bitmap> paginas,
+        System.Windows.Forms.Timer timeout, Action<string> stop, Func<bool> isGestart, Action<bool> zetGestart)
+    {
+        try
+        {
+            await v.EnsureCoreWebView2Async(env);
+        }
+        catch { stop("De pdf maken kon niet starten."); return; }
+        CoreWebView2 core = v.CoreWebView2;
+        core.NewWindowRequested += delegate(object s, CoreWebView2NewWindowRequestedEventArgs e) { e.Handled = true; };
+
+        core.NavigationCompleted += async delegate(object s, CoreWebView2NavigationCompletedEventArgs e)
+        {
+            if (isGestart() || !e.IsSuccess) return;
+            Uri u;
+            if (!Uri.TryCreate(core.Source, UriKind.Absolute, out u) || u.AbsolutePath.IndexOf("/document/", StringComparison.OrdinalIgnoreCase) < 0) return;
+            zetGestart(true);
+            try { await core.ExecuteScriptAsync(RemarkablePdfScript); } catch { stop("De pdf maken kon niet starten."); }
+        };
+
+        core.WebMessageReceived += async delegate(object s, CoreWebView2WebMessageReceivedEventArgs e)
+        {
+            string m;
+            try { m = e.TryGetWebMessageAsString(); } catch { return; }
+            if (m == null) return;
+            try
+            {
+                if (m.StartsWith("rmpagina:"))
+                {
+                    int bar = m.IndexOf('|');
+                    int nr = int.Parse(m.Substring(9, bar - 9));
+                    string data = m.Substring(bar + 1);
+                    int komma = data.IndexOf(',');
+                    byte[] bytes = Convert.FromBase64String(data.Substring(komma + 1));
+                    using (MemoryStream ms = new MemoryStream(bytes))
+                    using (Image img = Image.FromStream(ms))
+                        paginas[nr] = OpWit(img);
+                    f.Text = "PDF maken… pagina " + paginas.Count;
+                    core.PostWebMessageAsString("rmverder");
+                }
+                else if (m.StartsWith("rmfoto:"))
+                {
+                    int bar = m.IndexOf('|');
+                    int nr = int.Parse(m.Substring(7, bar - 7));
+                    string[] d = m.Substring(bar + 1).Split(',');
+                    Rectangle rect = new Rectangle(int.Parse(d[0]), int.Parse(d[1]), int.Parse(d[2]), int.Parse(d[3]));
+                    using (MemoryStream ms = new MemoryStream())
+                    {
+                        await core.CapturePreviewAsync(CoreWebView2CapturePreviewImageFormat.Png, ms);
+                        ms.Position = 0;
+                        using (Bitmap scherm = new Bitmap(ms))
+                        {
+                            rect.Intersect(new Rectangle(0, 0, scherm.Width, scherm.Height));
+                            if (rect.Width > 50 && rect.Height > 50)
+                            {
+                                using (Bitmap uit = scherm.Clone(rect, scherm.PixelFormat)) paginas[nr] = OpWit(uit);
+                            }
+                        }
+                    }
+                    f.Text = "PDF maken… pagina " + paginas.Count;
+                    core.PostWebMessageAsString("rmverder");
+                }
+                else if (m.StartsWith("rmklaar:"))
+                {
+                    int bar = m.IndexOf('|');
+                    string titel = bar >= 0 ? m.Substring(bar + 1) : "";
+                    if (paginas.Count == 0) { stop("Er zijn geen pagina's gevonden in dit document."); return; }
+                    string naam = PdfNaam(titel);
+                    string pad = UniquePath(naam + ".pdf");
+                    SchrijfPdf(new List<Bitmap>(paginas.Values), pad);
+                    stop(null);
+                    RefreshClips();
+                    clip.Visible = true;
+                    StyleClipButton();
+                }
+                else if (m.StartsWith("rmfout:"))
+                {
+                    SchrijfSleepInfoTekst("Viewer reMarkable: " + m.Substring(7));
+                    stop("Het lukte niet om de pagina's van dit document te vinden. Op je bureaublad staat reMarkable-sleepinfo.txt. Stuur dat naar Claude.");
+                }
+            }
+            catch (Exception ex)
+            {
+                stop("De pdf maken ging mis: " + ex.Message);
+            }
+        };
+
+        core.Navigate(docUrl);
+    }
+
+    static string PdfNaam(string titel)
+    {
+        string t = (titel ?? "").Trim();
+        foreach (string sep in new string[] { " | ", " - reMarkable", " – reMarkable", " — reMarkable" })
+        {
+            int i = t.IndexOf(sep, StringComparison.OrdinalIgnoreCase);
+            if (i > 0) t = t.Substring(0, i);
+        }
+        if (t.Length == 0 || t.Equals("reMarkable", StringComparison.OrdinalIgnoreCase)) t = "reMarkable " + DateTime.Now.ToString("yyyy-MM-dd HH.mm");
+        foreach (char c in Path.GetInvalidFileNameChars()) t = t.Replace(c, '-');
+        return t.Length > 80 ? t.Substring(0, 80) : t;
+    }
+
+    static Bitmap OpWit(Image bron)
+    {
+        Bitmap b = new Bitmap(bron.Width, bron.Height, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+        using (Graphics g = Graphics.FromImage(b))
+        {
+            g.Clear(Color.White);
+            g.DrawImage(bron, 0, 0, bron.Width, bron.Height);
+        }
+        return b;
+    }
+
+    // Een eenvoudige pdf: elke pagina is één afbeelding (JPEG), A4-breedte, hoogte volgens de afbeelding
+    static void SchrijfPdf(List<Bitmap> paginas, string pad)
+    {
+        CultureInfo inv = CultureInfo.InvariantCulture;
+        System.Drawing.Imaging.ImageCodecInfo jpg = null;
+        foreach (System.Drawing.Imaging.ImageCodecInfo ci in System.Drawing.Imaging.ImageCodecInfo.GetImageEncoders())
+            if (ci.MimeType == "image/jpeg") jpg = ci;
+        System.Drawing.Imaging.EncoderParameters ep = new System.Drawing.Imaging.EncoderParameters(1);
+        ep.Param[0] = new System.Drawing.Imaging.EncoderParameter(System.Drawing.Imaging.Encoder.Quality, 88L);
+
+        using (FileStream fs = File.Create(pad))
+        {
+            List<long> offsets = new List<long>();
+            Action<string> w = delegate(string t) { byte[] b = Encoding.ASCII.GetBytes(t); fs.Write(b, 0, b.Length); };
+            w("%PDF-1.4\n");
+            int n = paginas.Count;
+            // objecten: 1 catalogus, 2 pagina's, daarna per pagina 3 objecten (pagina, inhoud, afbeelding)
+            offsets.Add(fs.Position); w("1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n");
+            StringBuilder kids = new StringBuilder();
+            for (int i = 0; i < n; i++) kids.Append((3 + i * 3) + " 0 R ");
+            offsets.Add(fs.Position); w("2 0 obj\n<< /Type /Pages /Kids [" + kids + "] /Count " + n + " >>\nendobj\n");
+            for (int i = 0; i < n; i++)
+            {
+                Bitmap bmp = paginas[i];
+                double pw = 595.0, ph = 595.0 * bmp.Height / bmp.Width;
+                int pObj = 3 + i * 3, cObj = pObj + 1, iObj = pObj + 2;
+                offsets.Add(fs.Position);
+                w(pObj + " 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 " + pw.ToString("0.##", inv) + " " + ph.ToString("0.##", inv) +
+                  "] /Resources << /XObject << /Im0 " + iObj + " 0 R >> >> /Contents " + cObj + " 0 R >>\nendobj\n");
+                string inhoud = "q " + pw.ToString("0.##", inv) + " 0 0 " + ph.ToString("0.##", inv) + " 0 0 cm /Im0 Do Q";
+                offsets.Add(fs.Position);
+                w(cObj + " 0 obj\n<< /Length " + inhoud.Length + " >>\nstream\n" + inhoud + "\nendstream\nendobj\n");
+                byte[] data;
+                using (MemoryStream ms = new MemoryStream())
+                {
+                    if (jpg != null) bmp.Save(ms, jpg, ep); else bmp.Save(ms, System.Drawing.Imaging.ImageFormat.Jpeg);
+                    data = ms.ToArray();
+                }
+                offsets.Add(fs.Position);
+                w(iObj + " 0 obj\n<< /Type /XObject /Subtype /Image /Width " + bmp.Width + " /Height " + bmp.Height +
+                  " /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length " + data.Length + " >>\nstream\n");
+                fs.Write(data, 0, data.Length);
+                w("\nendstream\nendobj\n");
+            }
+            long xref = fs.Position;
+            w("xref\n0 " + (offsets.Count + 1) + "\n0000000000 65535 f \n");
+            foreach (long o in offsets) w(o.ToString("0000000000", inv) + " 00000 n \n");
+            w("trailer\n<< /Size " + (offsets.Count + 1) + " /Root 1 0 R >>\nstartxref\n" + xref + "\n%%EOF\n");
+        }
+    }
+
+    void SchrijfSleepInfoTekst(string tekst)
+    {
+        try
+        {
+            string pad = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "reMarkable-sleepinfo.txt");
+            File.WriteAllText(pad, "Hart Werkplek versie " + versie + " - " + DateTime.Now.ToString("yyyy-MM-dd HH:mm") + "\r\nEr staan geen documentnamen of inhoud in dit bestand.\r\n\r\n" + tekst, Encoding.UTF8);
+        }
+        catch { }
     }
 
     [DllImport("ole32.dll")] static extern void ReleaseStgMedium(ref System.Runtime.InteropServices.ComTypes.STGMEDIUM pmedium);
