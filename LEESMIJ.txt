@@ -76,3 +76,6 @@ Versie 13
 
 Versie 14
 - Klembord: een gesleepte link naar een pagina (zoals een document in reMarkable) wordt niet meer als .htm bewaard. Je krijgt dan een tip om Downloaden te gebruiken.
+
+Versie 15
+- Voorbereiding slepen uit reMarkable: lukt het slepen nog niet, dan zet het programma reMarkable-sleepinfo.txt op je bureaublad (zonder documentnamen). Stuur dat naar Claude.

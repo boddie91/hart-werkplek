@@ -10,6 +10,7 @@ using System.IO;
 using System.Net;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Microsoft.Web.WebView2.Core;
@@ -434,6 +435,8 @@ class MainForm : Form
         Setup(v.CoreWebView2, t);
         if (t.Key == "outlook")
             await v.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(OutlookScript);
+        if (t.Key == "remarkable")
+            await v.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(RemarkableScript);
         if (t.Key == "start")
         {
             await v.CoreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(PaneelScript);
@@ -947,6 +950,96 @@ class MainForm : Form
         return null;
     }
 
+    // Houdt in het tabblad reMarkable bij hoe slepen en downloaden werken (zonder documentnamen),
+    // zodat het slepen naar het klembord later precies goed gebouwd kan worden.
+    const string RemarkableScript = @"(function(){
+  if (!/(^|\.)remarkable\.com$/.test(location.hostname)) return;
+  var log = []; window.__rmLog = log;
+  function clean(u){ try { var x = new URL(u, location.href); var keys = []; x.searchParams.forEach(function(v,k){ keys.push(k); }); return x.origin + x.pathname + (keys.length ? '?' + keys.join('&') : ''); } catch(e) { return ''; } }
+  function add(o){ o.tijd = new Date().toISOString().slice(11,19); log.push(o); if (log.length > 60) log.shift(); }
+  var veilig = /^(download|downloaden|export|exporteren|pdf|share|delen|send|verzenden|save|opslaan|more|meer|menu|\.\.\.|…)/i;
+  function desc(el){
+    if (!el || !el.tagName) return null;
+    var a = {};
+    for (var i = 0; i < el.attributes.length; i++) {
+      var at = el.attributes[i];
+      if (!/^(class|role|draggable|href|type|id|data-)/.test(at.name) && at.name !== 'aria-label' && at.name !== 'title') continue;
+      var v = at.value;
+      if (at.name === 'href') v = clean(v);
+      else if (at.name === 'aria-label' || at.name === 'title') v = veilig.test(v.trim()) ? v.trim().slice(0,30) : '[' + v.length + ' tekens]';
+      else v = v.slice(0,120);
+      a[at.name] = v;
+    }
+    return { tag: el.tagName, a: a };
+  }
+  try {
+    var of = window.fetch;
+    window.fetch = function(i, init){
+      var url = typeof i === 'string' ? i : (i && i.url) || '';
+      var m = (init && init.method) || (i && i.method) || 'GET';
+      var p = of.apply(this, arguments);
+      p.then(function(r){ add({ t: 'fetch', m: m, u: clean(url), s: r.status, ct: r.headers.get('content-type') }); }, function(){});
+      return p;
+    };
+    var oo = XMLHttpRequest.prototype.open;
+    XMLHttpRequest.prototype.open = function(m, u){
+      var x = this; x.__d = { t: 'xhr', m: m, u: clean(u) };
+      x.addEventListener('load', function(){ var d = x.__d; d.s = x.status; try { d.ct = x.getResponseHeader('content-type'); } catch(e) {} add(d); });
+      return oo.apply(this, arguments);
+    };
+  } catch(e) {}
+  window.addEventListener('dragstart', function(e){
+    var pad = [], el = e.target;
+    for (var i = 0; el && i < 8; i++, el = el.parentElement) pad.push(desc(el));
+    var knoppen = [];
+    var c = e.target.closest ? (e.target.closest('[role=row],li,article,[draggable=true]') || e.target.parentElement) : null;
+    if (c) c.querySelectorAll('button,[role=button],a,[role=menuitem]').forEach(function(b){ if (knoppen.length < 15) knoppen.push(desc(b)); });
+    var types = []; try { types = Array.prototype.slice.call(e.dataTransfer.types); } catch(x) {}
+    var links = []; try { var ul = e.dataTransfer.getData('text/uri-list'); if (ul) links = ul.split(/\r?\n/).map(clean); } catch(x) {}
+    add({ t: 'dragstart', pad: pad, knoppen: knoppen, types: types, links: links });
+  }, false);
+  document.addEventListener('click', function(e){
+    var b = e.target.closest ? e.target.closest('button,[role=button],[role=menuitem]') : null;
+    if (!b) return;
+    var tekst = (b.innerText || '').trim();
+    add({ t: 'klik', el: desc(b), tekst: veilig.test(tekst) ? tekst.slice(0,30) : '[' + tekst.length + ' tekens]' });
+  }, true);
+})();
+";
+
+    async void SchrijfSleepInfo(IDataObject data, string url)
+    {
+        StringBuilder sb = new StringBuilder();
+        sb.AppendLine("Hart Werkplek versie " + versie + " - sleepinfo reMarkable - " + DateTime.Now.ToString("yyyy-MM-dd HH:mm"));
+        sb.AppendLine("Er staan geen documentnamen of inhoud in dit bestand.");
+        sb.AppendLine();
+        try { sb.AppendLine("Formaten: " + string.Join(", ", data.GetFormats())); } catch { }
+        if (url != null)
+        {
+            Uri u;
+            if (Uri.TryCreate(url, UriKind.Absolute, out u)) sb.AppendLine("Link: " + u.Scheme + "://" + u.Host + u.AbsolutePath + (u.Query.Length > 0 ? " (met zoekdeel)" : ""));
+        }
+        sb.AppendLine();
+        Tab r;
+        if (tabs.TryGetValue("remarkable", out r) && r.View != null && r.View.CoreWebView2 != null)
+        {
+            try
+            {
+                string j = await r.View.CoreWebView2.ExecuteScriptAsync("JSON.stringify(window.__rmLog||[],null,1)");
+                if (j != null && j.Length > 1 && j[0] == '"') { try { j = Regex.Unescape(j.Substring(1, j.Length - 2)); } catch { } }
+                sb.AppendLine("Logboek tabblad reMarkable:");
+                sb.AppendLine(j);
+            }
+            catch { }
+        }
+        try
+        {
+            string pad = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "reMarkable-sleepinfo.txt");
+            File.WriteAllText(pad, sb.ToString(), Encoding.UTF8);
+        }
+        catch { }
+    }
+
     Label clipHint;
     System.Windows.Forms.Timer meldingTimer;
     const string ClipUitleg = "Downloads komen hier binnen. Sleep een bestand naar James om het te uploaden. Na 1 dag wordt het vanzelf gewist.";
@@ -1020,7 +1113,11 @@ class MainForm : Form
         {
             string url = DropUrl(e.Data);
             if (url != null && LijktBestand(url)) DownloadVanLink(url);
-            else ToonMelding("Dit is een link naar een pagina, niet het bestand zelf. Kies in reMarkable bij het document Downloaden of Exporteren als pdf: de pdf komt dan vanzelf hier op het klembord.");
+            else
+            {
+                SchrijfSleepInfo(e.Data, url);
+                ToonMelding("Slepen uit reMarkable werkt nog niet: dit was een link, niet de pdf. Op je bureaublad staat nu reMarkable-sleepinfo.txt. Stuur dat naar Claude, dan maak ik het slepen af.");
+            }
         }
         RefreshClips();
     }
