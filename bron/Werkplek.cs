@@ -1351,13 +1351,10 @@ class MainForm : Form
                     int bar = m.IndexOf('|');
                     string titel = bar >= 0 ? m.Substring(bar + 1) : "";
                     if (paginas.Count == 0) { stop("Er zijn geen pagina's gevonden in dit document."); return; }
-                    string naam = PdfNaam(titel);
-                    string pad = UniquePath(naam + ".pdf");
-                    SchrijfPdf(new List<Bitmap>(paginas.Values), pad);
+                    List<Bitmap> lijst = new List<Bitmap>(paginas.Values);
+                    paginas.Clear();
                     stop(null);
-                    RefreshClips();
-                    clip.Visible = true;
-                    StyleClipButton();
+                    BeginInvoke(new Action(delegate { KiesPaginas(lijst, PdfNaam(titel)); }));
                 }
                 else if (m.StartsWith("rmfout:"))
                 {
@@ -1372,6 +1369,137 @@ class MainForm : Form
         };
 
         core.Navigate(docUrl);
+    }
+
+    // Na het ophalen: kies welke pagina's in de pdf komen
+    void KiesPaginas(List<Bitmap> lijst, string naam)
+    {
+        try
+        {
+            using (Form d = new Form())
+            {
+                d.Text = "Welke pagina's wil je in de pdf?";
+                d.Icon = Icon;
+                d.StartPosition = FormStartPosition.CenterScreen;
+                d.Size = new Size(S(980), S(720));
+                d.MinimumSize = new Size(S(600), S(420));
+                d.BackColor = Bg;
+                d.Font = new Font("Segoe UI", 10f);
+                d.TopMost = true;
+
+                Panel boven = new Panel();
+                boven.Dock = DockStyle.Top;
+                boven.Height = S(56);
+                boven.Padding = new Padding(S(14), S(12), S(14), S(8));
+                Label ln = new Label();
+                ln.Text = "Bestandsnaam";
+                ln.AutoSize = true;
+                ln.Location = new Point(S(14), S(17));
+                boven.Controls.Add(ln);
+                TextBox tb = new TextBox();
+                tb.Text = naam;
+                tb.Location = new Point(S(120), S(13));
+                tb.Width = S(380);
+                boven.Controls.Add(tb);
+
+                FlowLayoutPanel knoppenRij = new FlowLayoutPanel();
+                knoppenRij.Dock = DockStyle.Bottom;
+                knoppenRij.Height = S(58);
+                knoppenRij.FlowDirection = FlowDirection.RightToLeft;
+                knoppenRij.Padding = new Padding(S(12), S(10), S(12), S(10));
+
+                FlowLayoutPanel raster = new FlowLayoutPanel();
+                raster.Dock = DockStyle.Fill;
+                raster.AutoScroll = true;
+                raster.Padding = new Padding(S(10));
+                raster.BackColor = Bg;
+
+                List<CheckBox> vinkjes = new List<CheckBox>();
+                Label telling = new Label();
+                telling.AutoSize = true;
+                telling.Margin = new Padding(S(10), S(10), S(10), 0);
+                Action tel = delegate
+                {
+                    int n = 0; foreach (CheckBox c in vinkjes) if (c.Checked) n++;
+                    telling.Text = n + " van " + vinkjes.Count + " pagina's gekozen";
+                };
+
+                for (int i = 0; i < lijst.Count; i++)
+                {
+                    Bitmap bmp = lijst[i];
+                    Panel kaart = new Panel();
+                    kaart.Size = new Size(S(150), S(230));
+                    kaart.Margin = new Padding(S(6));
+                    kaart.BackColor = Color.White;
+                    kaart.Padding = new Padding(S(6));
+                    PictureBox pb = new PictureBox();
+                    pb.Dock = DockStyle.Fill;
+                    pb.SizeMode = PictureBoxSizeMode.Zoom;
+                    pb.Image = bmp;
+                    pb.Cursor = Cursors.Hand;
+                    CheckBox cb = new CheckBox();
+                    cb.Dock = DockStyle.Bottom;
+                    cb.Height = S(28);
+                    cb.Text = "Pagina " + (i + 1);
+                    cb.Checked = true;
+                    Panel kaartRef = kaart;
+                    cb.CheckedChanged += delegate { kaartRef.BackColor = cb.Checked ? Color.White : Color.FromArgb(225, 228, 235); pb.Visible = true; tel(); };
+                    pb.Click += delegate { cb.Checked = !cb.Checked; };
+                    kaart.Controls.Add(pb);
+                    kaart.Controls.Add(cb);
+                    raster.Controls.Add(kaart);
+                    vinkjes.Add(cb);
+                }
+
+                Button ok = new Button(); ok.Text = "Maak pdf"; ok.AutoSize = true; ok.BackColor = Accent; ok.ForeColor = Color.White; ok.FlatStyle = FlatStyle.Flat; ok.FlatAppearance.BorderSize = 0; ok.Padding = new Padding(S(10), S(4), S(10), S(4));
+                Button annuleer = new Button(); annuleer.Text = "Annuleren"; annuleer.AutoSize = true; annuleer.DialogResult = DialogResult.Cancel;
+                Button alles = new Button(); alles.Text = "Alles"; alles.AutoSize = true;
+                Button geen = new Button(); geen.Text = "Geen"; geen.AutoSize = true;
+                Button laatste = new Button(); laatste.Text = "Alleen laatste"; laatste.AutoSize = true;
+                alles.Click += delegate { foreach (CheckBox c in vinkjes) c.Checked = true; };
+                geen.Click += delegate { foreach (CheckBox c in vinkjes) c.Checked = false; };
+                laatste.Click += delegate { for (int i = 0; i < vinkjes.Count; i++) vinkjes[i].Checked = i == vinkjes.Count - 1; };
+                ok.Click += delegate
+                {
+                    int n = 0; foreach (CheckBox c in vinkjes) if (c.Checked) n++;
+                    if (n == 0) { MessageBox.Show(d, "Kies minstens één pagina.", "Hart Werkplek"); return; }
+                    d.DialogResult = DialogResult.OK;
+                };
+                knoppenRij.Controls.Add(ok);
+                knoppenRij.Controls.Add(annuleer);
+                knoppenRij.Controls.Add(laatste);
+                knoppenRij.Controls.Add(geen);
+                knoppenRij.Controls.Add(alles);
+                knoppenRij.Controls.Add(telling);
+                d.CancelButton = annuleer;
+
+                d.Controls.Add(raster);
+                d.Controls.Add(knoppenRij);
+                d.Controls.Add(boven);
+                tel();
+
+                if (d.ShowDialog(this) == DialogResult.OK)
+                {
+                    List<Bitmap> gekozen = new List<Bitmap>();
+                    for (int i = 0; i < vinkjes.Count; i++) if (vinkjes[i].Checked) gekozen.Add(lijst[i]);
+                    string t = tb.Text.Trim();
+                    foreach (char c in Path.GetInvalidFileNameChars()) t = t.Replace(c, '-');
+                    if (t.Length == 0) t = naam;
+                    SchrijfPdf(gekozen, UniquePath(t + ".pdf"));
+                    RefreshClips();
+                    clip.Visible = true;
+                    StyleClipButton();
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            ToonMelding("De pdf maken ging mis: " + ex.Message);
+        }
+        finally
+        {
+            foreach (Bitmap b in lijst) { try { b.Dispose(); } catch { } }
+        }
     }
 
     static string PdfNaam(string titel)

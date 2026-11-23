@@ -82,3 +82,6 @@ Versie 15
 
 Versie 16
 - Sleep een document uit het tabblad reMarkable naar het klembord: het programma opent het document even in een eigen venster, maakt er een pdf van en zet die op het klembord.
+
+Versie 17
+- reMarkable naar pdf: na het ophalen kies je welke pagina's in de pdf komen (aanklikken, of Alles / Geen / Alleen laatste) en kun je de bestandsnaam aanpassen.
