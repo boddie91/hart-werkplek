@@ -85,3 +85,6 @@ Versie 16
 
 Versie 17
 - reMarkable naar pdf: na het ophalen kies je welke pagina's in de pdf komen (aanklikken, of Alles / Geen / Alleen laatste) en kun je de bestandsnaam aanpassen.
+
+Versie 18
+- reMarkable naar pdf: begint nu bij de eerste pagina en scrolt rustiger door het hele document, zodat alle pagina's meekomen.

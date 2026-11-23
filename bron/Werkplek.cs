@@ -1173,15 +1173,16 @@ class MainForm : Form
       return groot(e);
     });
   }
+  // de scrollbare container waar de pagina's zelf in staan (niet bijv. een zijbalk met miniaturen)
   function scroller(){
-    var best = document.scrollingElement, max = best.scrollHeight - best.clientHeight;
-    document.querySelectorAll('*').forEach(function(el){
-      var cs = getComputedStyle(el);
-      if (!/(auto|scroll)/.test(cs.overflowY)) return;
-      var d = el.scrollHeight - el.clientHeight;
-      if (d > max) { max = d; best = el; }
-    });
-    return best;
+    var v = visuals();
+    for (var i = 0; i < v.length; i++) {
+      for (var el = v[i].parentElement; el && el !== document.body; el = el.parentElement) {
+        var cs = getComputedStyle(el);
+        if (/(auto|scroll)/.test(cs.overflowY) && el.scrollHeight > el.clientHeight + 10) return el;
+      }
+    }
+    return document.scrollingElement;
   }
   function diag(){
     var tel = {};
@@ -1202,6 +1203,12 @@ class MainForm : Form
   await wacht(2500);
   var sc = scroller();
   var scTop = function(){ return sc === document.scrollingElement ? window.scrollY : sc.scrollTop; };
+  // reMarkable opent vaak bij de laatste pagina: eerst helemaal naar boven
+  for (var t = 0; t < 8 && scTop() > 2; t++) {
+    if (sc === document.scrollingElement) window.scrollTo(0, 0); else sc.scrollTop = 0;
+    await wacht(800);
+  }
+  await wacht(1500);
   var gedaan = {}, urls = {}, idx = 0;
   async function pak(){
     var lijst = visuals().map(function(v){ return { v: v, top: v.getBoundingClientRect().top + scTop() }; }).sort(function(a, b){ return a.top - b.top; });
@@ -1234,14 +1241,18 @@ class MainForm : Form
       }
     }
   }
-  for (var s = 0; s < 200; s++) {
+  var stil = 0;
+  for (var s = 0; s < 400; s++) {
     await pak();
     var voor = scTop();
-    if (sc === document.scrollingElement) window.scrollBy(0, window.innerHeight * 0.8); else sc.scrollTop += sc.clientHeight * 0.8;
-    await wacht(1300);
-    if (Math.abs(scTop() - voor) < 2) break;
+    if (sc === document.scrollingElement) window.scrollBy(0, window.innerHeight * 0.6); else sc.scrollTop += sc.clientHeight * 0.6;
+    await wacht(1500);
+    if (Math.abs(scTop() - voor) < 2) { stil++; if (stil >= 2) break; } else stil = 0;
   }
   await pak();
+  var info = { scroller: sc === document.scrollingElement ? 'pagina' : (sc.tagName + ' ' + String(sc.className || '').slice(0, 80)),
+               hoogte: sc.scrollHeight, zicht: sc.clientHeight, breed: sc.scrollWidth, zichtBreed: sc.clientWidth, paginas: idx, diag: diag() };
+  chrome.webview.postMessage('rminfo:' + JSON.stringify(info));
   chrome.webview.postMessage('rmklaar:' + idx + '|' + (document.title || ''));
 })();
 ";
@@ -1355,6 +1366,10 @@ class MainForm : Form
                     paginas.Clear();
                     stop(null);
                     BeginInvoke(new Action(delegate { KiesPaginas(lijst, PdfNaam(titel)); }));
+                }
+                else if (m.StartsWith("rminfo:"))
+                {
+                    SchrijfSleepInfoTekst("Laatste pdf uit reMarkable: " + m.Substring(7));
                 }
                 else if (m.StartsWith("rmfout:"))
                 {
