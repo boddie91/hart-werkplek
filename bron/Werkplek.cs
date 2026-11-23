@@ -279,6 +279,39 @@ class MainForm : Form
             side.Controls.Add(b);
         }
 
+        // klok en datum, zichtbaar ook als de taakbalk verborgen is (schermvullend)
+        Panel klok = new Panel();
+        klok.Dock = DockStyle.Top;
+        klok.Height = S(62);
+        klok.Padding = new Padding(S(8), 0, 0, S(10));
+        Label tijd = new Label();
+        tijd.Dock = DockStyle.Top;
+        tijd.Height = S(32);
+        tijd.Font = new Font("Segoe UI Light", 20f);
+        tijd.ForeColor = Ink;
+        tijd.TextAlign = ContentAlignment.MiddleLeft;
+        Label datum = new Label();
+        datum.Dock = DockStyle.Top;
+        datum.Height = S(20);
+        datum.Font = new Font("Segoe UI", 9.5f);
+        datum.ForeColor = Muted;
+        datum.TextAlign = ContentAlignment.MiddleLeft;
+        klok.Controls.Add(datum);
+        klok.Controls.Add(tijd);
+        side.Controls.Add(klok);
+        CultureInfo nl = new CultureInfo("nl-NL");
+        Action zetKlok = delegate
+        {
+            DateTime nu = DateTime.Now;
+            tijd.Text = nu.ToString("HH:mm", nl);
+            datum.Text = nu.ToString("dddd d MMMM", nl);
+        };
+        zetKlok();
+        System.Windows.Forms.Timer klokTimer = new System.Windows.Forms.Timer();
+        klokTimer.Interval = 1000;
+        klokTimer.Tick += delegate { zetKlok(); };
+        klokTimer.Start();
+
         Label title = new Label();
         title.Text = "Hart Werkplek";
         title.Font = new Font("Segoe UI Semibold", 13f);
