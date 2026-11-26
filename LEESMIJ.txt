@@ -104,3 +104,7 @@ Versie 20.1
 - Klembord: bovenin een invulbalk voor tekst. Klik op een tekst om hem weer te kopiëren, of sleep hem naar een veld. Teksten verdwijnen bij het afsluiten.
 - Klembord: knoppen bij bestanden zijn nu icoontjes (openen, kopiëren, weghalen).
 - Bellen: plak naam en nummer uit James, kies waarover, en klik na het bellen op Gesproken, Geen gehoor, Voicemail of Belt terug. Het programma plant de volgende poging en maakt de contactregel voor James.
+
+Versie 20.2
+- Bouwfout uit 20.1 opgelost (klembord-invulbalk).
+- Mislukt het bouwen, dan staat de foutmelding voortaan op je bureaublad.

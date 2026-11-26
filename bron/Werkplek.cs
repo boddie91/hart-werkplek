@@ -20,7 +20,6 @@ static class Program
 {
     [DllImport("user32.dll")] static extern bool SetProcessDpiAwarenessContext(IntPtr value);
     [DllImport("user32.dll")] static extern bool SetProcessDPIAware();
-    [DllImport("user32.dll", CharSet = CharSet.Unicode)] static extern IntPtr SendMessage(IntPtr hWnd, int msg, IntPtr wParam, string lParam);
 
     [STAThread]
     static void Main()
@@ -61,6 +60,7 @@ class PaneTab
 
 class MainForm : Form
 {
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)] static extern IntPtr SendMessage(IntPtr hWnd, int msg, IntPtr wParam, string lParam);
     static readonly Color Accent = Color.FromArgb(178, 58, 91);
     static readonly Color AccentSoft = Color.FromArgb(248, 230, 236);
     static readonly Color Ink = Color.FromArgb(29, 36, 51);

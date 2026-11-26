@@ -16,7 +16,6 @@ New-Item -ItemType Directory -Force -Path $doel | Out-Null
 New-Item -ItemType Directory -Force -Path (Join-Path $doel 'web') | Out-Null
 Copy-Item (Join-Path $bron 'Werkplek.cs') $doel -Force
 Copy-Item (Join-Path $bron 'web\*') (Join-Path $doel 'web') -Force -Recurse
-Copy-Item (Join-Path $bron 'versie.txt') $doel -Force
 Copy-Item (Join-Path $bron 'hartwerkplek.ico') $doel -Force
 Copy-Item (Join-Path $PSScriptRoot 'bijwerken.ps1') $doel -Force
 $cfg = Join-Path $doel 'instellingen.txt'
@@ -73,10 +72,13 @@ $out = & $csc /nologo /target:winexe /platform:x64 /codepage:65001 "/win32icon:$
 if ($LASTEXITCODE -ne 0 -or -not (Test-Path $exe)) {
     $log = Join-Path $doel 'bouwfout.txt'
     $out | Out-File $log -Encoding UTF8
+    try { $out | Out-File (Join-Path ([Environment]::GetFolderPath('Desktop')) 'Hart Werkplek bouwfout.txt') -Encoding UTF8 } catch { }
     Write-Host ($out -join "`n")
-    Fout "het bouwen is mislukt. De foutmelding staat in $log - stuur die naar Claude."
+    Fout "het bouwen is mislukt. De foutmelding staat ook op je bureaublad: Hart Werkplek bouwfout.txt - stuur die naar Claude."
 }
 Write-Host "   Gelukt."
+# versienummer pas bijwerken als het bouwen gelukt is
+Copy-Item (Join-Path $bron 'versie.txt') $doel -Force
 
 # 5. Snelkoppeling op het bureaublad
 Stap "Snelkoppeling op het bureaublad maken"
