@@ -87,7 +87,8 @@ class MainForm : Form
     Panel side;
     Panel content;
     Panel viewport;                 // zichtbaar deel van de werkstrook
-    Panel strook;                   // werkstrook: pagina + zijvensters naast elkaar
+    Panel links;                    // deel links van de zijvensters, met de schuifbalk van de pagina
+    Panel strook;                   // de pagina zelf, op volle breedte
     HScrollBar schuif;
     bool bezigMetIndeling;
     Panel clip;
@@ -224,20 +225,25 @@ class MainForm : Form
         Controls.Add(content);
 
         // zijvensters versmallen de pagina niet: ze komen ernaast en je schuift horizontaal
+        // zijvensters vallen rechts over de pagina heen; de pagina houdt haar breedte en krijgt een schuifbalk
         viewport = new Panel();
         viewport.Dock = DockStyle.Fill;
-        viewport.BackColor = Bg;
+        viewport.BackColor = Line;
         content.Controls.Add(viewport);
+        links = new Panel();
+        links.BackColor = Bg;
+        links.Location = new Point(0, 0);
+        viewport.Controls.Add(links);
         schuif = new HScrollBar();
         schuif.Dock = DockStyle.Bottom;
         schuif.Height = SystemInformation.HorizontalScrollBarHeight;
         schuif.Visible = false;
         schuif.ValueChanged += delegate { if (strook != null) strook.Left = -schuif.Value; };
-        content.Controls.Add(schuif);
+        links.Controls.Add(schuif);
         strook = new Panel();
-        strook.BackColor = Line;
+        strook.BackColor = Bg;
         strook.Location = new Point(0, 0);
-        viewport.Controls.Add(strook);
+        links.Controls.Add(strook);
         viewport.Resize += delegate { Indeling(); };
 
         tips = new ToolTip();
@@ -538,7 +544,7 @@ class MainForm : Form
         if (current != t) return;
         t.Host.Visible = true;
         Indeling();
-        if (t.PaneHost == null || t.Pane.Count == 0) ToonDeel(t.Host);
+        if (schuif.Visible) schuif.Value = 0;
         t.View.Focus();
     }
 
@@ -688,7 +694,8 @@ class MainForm : Form
         strip.Padding = new Padding(S(6), S(5), S(6), 0);
         host.Controls.Add(strip);
 
-        strook.Controls.Add(host);
+        viewport.Controls.Add(host);
+        host.BringToFront();
         t.HasPane = true;
         t.PaneHost = host;
         t.Strip = strip;
@@ -710,58 +717,60 @@ class MainForm : Form
         return 0;
     }
 
-    // ---------- werkstrook indelen: pagina op volle breedte, zijvensters rechts ernaast ----------
+    // ---------- indelen: pagina op volle breedte links, zijvensters rechts eroverheen ----------
     void Indeling()
     {
         if (bezigMetIndeling || strook == null) return;
         bezigMetIndeling = true;
         try
         {
-            int vw = Math.Max(S(200), viewport.ClientSize.Width);
-            List<Control> rij = new List<Control>();
+            int vw = Math.Max(S(300), viewport.ClientSize.Width);
+            int vh = viewport.ClientSize.Height;
+            List<Control> rechts = new List<Control>();
             List<int> breed = new List<int>();
-            if (current != null && current.Host != null && current.Host.Visible) { rij.Add(current.Host); breed.Add(vw); }
             foreach (Tab x in order)
             {
                 if (x.PaneHost == null) continue;
                 bool zien = x == current && x.Pane.Count > 0;
                 x.PaneHost.Visible = zien;
-                if (zien) { rij.Add(x.PaneHost); breed.Add(Math.Max(S(520), vw * 55 / 100)); }
+                if (zien) { rechts.Add(x.PaneHost); breed.Add(Math.Max(S(520), vw * 55 / 100)); }
             }
-            if (verslag != null && verslag.Visible) { rij.Add(verslag); breed.Add(S(460)); }
-            if (clip != null && clip.Visible) { rij.Add(clip); breed.Add(S(280)); }
+            if (verslag != null && verslag.Visible) { rechts.Add(verslag); breed.Add(S(460)); }
+            if (clip != null && clip.Visible) { rechts.Add(clip); breed.Add(S(280)); }
 
-            int gap = rij.Count > 1 ? 1 : 0;
-            int totaal = 0;
-            for (int i = 0; i < breed.Count; i++) totaal += breed[i] + (i > 0 ? gap : 0);
-            if (totaal < vw) totaal = vw;
+            int rb = 0;
+            foreach (int w in breed) rb += w + 1;
+            int beschikbaar = Math.Max(S(300), vw - rb);
+            links.Bounds = new Rectangle(0, 0, beschikbaar, vh);
 
-            bool nodig = totaal > vw;
-            if (schuif.Visible != nodig) schuif.Visible = nodig;
-            int h = viewport.ClientSize.Height;
-            vw = Math.Max(S(200), viewport.ClientSize.Width);
-            if (breed.Count > 0 && rij[0] == (current != null ? current.Host : null)) breed[0] = vw;
-            totaal = 0;
-            for (int i = 0; i < breed.Count; i++) totaal += breed[i] + (i > 0 ? gap : 0);
-            if (totaal < vw) totaal = vw;
-
-            int xpos = 0;
-            for (int i = 0; i < rij.Count; i++)
+            int xpos = beschikbaar;
+            for (int i = 0; i < rechts.Count; i++)
             {
-                if (i > 0) xpos += gap;
-                rij[i].Dock = DockStyle.None;
-                rij[i].Bounds = new Rectangle(xpos, 0, breed[i], h);
-                xpos += breed[i];
+                xpos += 1;
+                int w = Math.Max(0, Math.Min(breed[i], vw - xpos));
+                rechts[i].Dock = DockStyle.None;
+                rechts[i].Bounds = new Rectangle(xpos, 0, w, vh);
+                rechts[i].BringToFront();
+                xpos += w;
             }
-            strook.Size = new Size(totaal, h);
+
+            bool nodig = vw > beschikbaar;
+            if (schuif.Visible != nodig) schuif.Visible = nodig;
+            int h = links.ClientSize.Height - (nodig ? schuif.Height : 0);
+            if (current != null && current.Host != null)
+            {
+                current.Host.Dock = DockStyle.None;
+                current.Host.Bounds = new Rectangle(0, 0, vw, h);
+            }
+            strook.Size = new Size(vw, h);
 
             if (nodig)
             {
                 schuif.Minimum = 0;
-                schuif.LargeChange = vw;
+                schuif.LargeChange = beschikbaar;
                 schuif.SmallChange = S(80);
-                schuif.Maximum = totaal - 1;
-                int max = totaal - vw;
+                schuif.Maximum = vw - 1;
+                int max = vw - beschikbaar;
                 if (schuif.Value > max) schuif.Value = max;
             }
             else if (schuif.Value != 0) schuif.Value = 0;
@@ -770,17 +779,6 @@ class MainForm : Form
         finally { bezigMetIndeling = false; }
     }
 
-    // schuif zo dat dit deel helemaal in beeld is
-    void ToonDeel(Control c)
-    {
-        if (c == null || !schuif.Visible) return;
-        int vw = viewport.ClientSize.Width;
-        int max = Math.Max(0, strook.Width - vw);
-        int v = schuif.Value;
-        if (c.Right > v + vw) v = c.Right - vw;
-        if (c.Left < v) v = c.Left;
-        schuif.Value = Math.Max(0, Math.Min(max, v));
-    }
 
     async void OpenInPane(Tab t, CoreWebView2NewWindowRequestedEventArgs e)
     {
@@ -857,7 +855,7 @@ class MainForm : Form
         t.Strip.Controls.Add(chip);
         t.Pane.Add(pt);
         SelectPaneTab(t, pt);
-        if (first) { Indeling(); ToonDeel(t.PaneHost); }
+        if (first) Indeling();
         return pt;
     }
 
@@ -975,8 +973,8 @@ class MainForm : Form
         verslag.Width = S(460);
         verslag.BackColor = Color.White;
         verslag.Visible = false;
-        verslag.VisibleChanged += delegate { Indeling(); if (verslag.Visible) ToonDeel(verslag); };
-        strook.Controls.Add(verslag);
+        verslag.VisibleChanged += delegate { Indeling(); };
+        viewport.Controls.Add(verslag);
     }
 
     async void ShowVerslag(bool on)
@@ -1014,8 +1012,8 @@ class MainForm : Form
         };
         clip.DragEnter += ClipDragEnter;
         clip.DragDrop += ClipDragDrop;
-        clip.VisibleChanged += delegate { Indeling(); if (clip.Visible) ToonDeel(clip); };
-        strook.Controls.Add(clip);
+        clip.VisibleChanged += delegate { Indeling(); };
+        viewport.Controls.Add(clip);
 
         clipList = new FlowLayoutPanel();
         clipList.Dock = DockStyle.Fill;
