@@ -86,6 +86,27 @@ input,select,textarea{font:inherit;border:1px solid var(--line);border-radius:9p
 .note{font-size:12px;color:var(--muted);margin-top:8px;line-height:1.45}
 .voet{display:flex;gap:14px;justify-content:flex-end;color:var(--muted);font-size:12.5px;margin-top:14px}
 .voet button{min-height:auto;padding:2px 0;border:0;background:none;color:var(--muted);text-decoration:underline}
+.wissel{margin-left:auto;display:flex;gap:0}
+.wissel button{min-height:28px;padding:0 10px;font-size:12.5px;border-radius:0}
+.wissel button:first-child{border-radius:8px 0 0 8px}.wissel button:last-child{border-radius:0 8px 8px 0;margin-left:-1px}
+.wissel button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.weeknav{display:flex;align-items:center;gap:8px;margin:4px 0 8px;font-size:13px;color:var(--muted)}
+.weeknav button{min-height:26px;padding:0 9px}
+.week{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(120px,1fr);gap:8px;flex:1;min-height:0}
+.dagkol{background:#f6f7fa;border:1px solid var(--line);border-radius:10px;padding:6px;display:flex;flex-direction:column;gap:6px;min-height:120px;overflow:auto}
+.dagkol.vandaag{background:var(--accent-soft);border-color:#efc9d5}
+.dagkol.laat{background:#fdeee6;border-color:#f6cdb7}
+.dagkol.over{outline:2px dashed var(--accent);outline-offset:-2px}
+.dagkop{display:flex;justify-content:space-between;align-items:baseline;font-size:12.5px;font-weight:700;padding:2px 4px;cursor:pointer;border-radius:6px}
+.dagkop:hover{background:rgba(0,0,0,.04)}
+.dagkop span{font-weight:400;color:var(--muted)}
+.dagkop .plus{font-weight:700;color:var(--accent)}
+.wk{background:#fff;border:1px solid var(--line);border-left:4px solid #bbb;border-radius:8px;padding:6px 8px;font-size:13px;cursor:grab;display:flex;gap:6px;align-items:flex-start;line-height:1.3}
+.wk input{width:15px;height:15px;margin:1px 0 0;flex:0 0 auto;accent-color:var(--ok)}
+.wk.done{opacity:.5;text-decoration:line-through}
+.wk.b-intake{border-left-color:var(--sun)}.wk.b-verslag{border-left-color:#3d4a63}.wk.b-terugkoppeling{border-left-color:var(--ok)}.wk.b-overig{border-left-color:#999}
+.wk.bel{border-left-color:var(--accent);cursor:pointer;background:#fff}
+.wk .ic{font-family:"Segoe MDL2 Assets","Segoe UI Symbol";color:var(--accent);font-size:12px;margin-top:2px}
 .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:9px 16px;border-radius:10px;opacity:0;transition:.25s;pointer-events:none;z-index:9}
 .toast.on{opacity:1}
 </style>
@@ -124,23 +145,23 @@ input,select,textarea{font:inherit;border:1px solid var(--line);border-radius:9p
 
   <div class="grid" id="grid">
     <div class="card" data-tegel="todo" data-naam="To do's">
-      <h2>To do's <small>alleen voornaam of initialen</small></h2>
-      <div class="row" style="margin-bottom:8px">
+      <h2>To do's <small>alleen voornaam of initialen</small>
+        <span class="wissel"><button id="wWeek" onclick="zetWeergave('week')">Week</button><button id="wLijst" onclick="zetWeergave('lijst')">Lijst</button></span></h2>
+      <div class="row" style="margin-bottom:4px;flex-wrap:wrap">
         <select id="nType" class="k" style="width:150px" onchange="toggleTel()">
           <option value="intake">Intake</option>
           <option value="verslag">Verslag</option>
           <option value="terugkoppeling">Terugkoppeling</option>
           <option value="overig">Overig</option>
         </select>
-        <input id="nTxt" placeholder="Wat?" onkeydown="if(event.key==='Enter')addTodo()">
-      </div>
-      <div class="row">
-        <input id="nTel" style="display:none">
+        <input id="nTxt" placeholder="Wat?" onkeydown="if(event.key==='Enter')addTodo()" style="min-width:180px">
         <input id="nDue" type="date" class="k" style="width:150px" title="Uiterlijk">
         <button class="k primary" onclick="addTodo()">Toevoegen</button>
+        <input id="nTel" style="display:none">
       </div>
       <div class="filters" id="filters"></div>
-      <div id="todos"></div>
+      <div class="weeknav" id="weeknav"></div>
+      <div id="todos" style="display:flex;flex-direction:column;flex:1;min-height:0"></div>
       <div style="text-align:right;margin-top:6px"><button class="small" onclick="clearDone()">Afgevinkte opruimen</button></div>
     </div>
     <div class="card" data-tegel="inbox" data-naam="Inbox">
@@ -254,7 +275,10 @@ function render(){
     const g=list.filter(f).sort((a,b)=>(a.due||'9999')<(b.due||'9999')?-1:1);
     if(g.length) html+='<div class="groep">'+naam+'</div>'+g.map(todoHtml).join('');
   });
-  $('todos').innerHTML=html||'<div class="empty">Niets openstaand.</div>';
+  const week=(S.weergave||'week')==='week';
+  $('wWeek').classList.toggle('on',week); $('wLijst').classList.toggle('on',!week);
+  if(week) renderWeek(list,td);
+  else { $('weeknav').innerHTML=''; $('todos').innerHTML=html||'<div class="empty">Niets openstaand.</div>'; }
 
   renderBellen();
 }
@@ -315,11 +339,11 @@ if(window.chrome && chrome.webview){
 // ---------- tegels: vrij plaatsen op een raster, lege plekken mogen ----------
 const KOL=12;
 const STANDAARD={
-  todo:{x:0,y:0,w:5,h:16},
-  inbox:{x:5,y:0,w:7,h:8},
-  bellen:{x:5,y:8,w:4,h:14},
-  snel:{x:9,y:8,w:3,h:8},
-  klad:{x:0,y:16,w:5,h:7}
+  todo:{x:0,y:0,w:12,h:13},
+  bellen:{x:0,y:13,w:4,h:14},
+  inbox:{x:4,y:13,w:5,h:9},
+  snel:{x:9,y:13,w:3,h:8},
+  klad:{x:4,y:22,w:5,h:5}
 };
 const MIN={w:2,h:3};
 const grid=$('grid');
@@ -327,7 +351,7 @@ const tegels={};
 grid.querySelectorAll('[data-tegel]').forEach(c=>{ tegels[c.dataset.tegel]=c; });
 
 function indeling(){
-  if(!S.plek || typeof S.plek!=='object') S.plek=JSON.parse(JSON.stringify(STANDAARD));
+  if(!S.plek || typeof S.plek!=='object' || S.plekVersie!==2){ S.plek=JSON.parse(JSON.stringify(STANDAARD)); S.plekVersie=2; }
   Object.keys(STANDAARD).forEach(id=>{ if(!S.plek[id]) S.plek[id]=Object.assign({},STANDAARD[id]); });
   return S.plek;
 }
@@ -515,6 +539,73 @@ function renderBellen(){
 }
 tekenRedenen();
 setInterval(()=>render(),60000);
+
+// ---------- weekoverzicht: wat moet wanneer, slepen om te verplaatsen ----------
+let weekVerschuif=0;
+function zetWeergave(w){ S.weergave=w; save(); render(); }
+function maandag(n){
+  const d=new Date(); d.setHours(12,0,0,0);
+  if(d.getDay()===6) d.setDate(d.getDate()+2); else if(d.getDay()===0) d.setDate(d.getDate()+1);
+  d.setDate(d.getDate()-((d.getDay()+6)%7)+7*n); return d;
+}
+function wkKaart(t){
+  return '<div class="wk b-'+t.type+(t.done?' done':'')+'" draggable="true" data-id="'+t.id+'" title="'+esc(TYPES[t.type]+': '+t.txt)+'">'+
+    '<input type="checkbox" '+(t.done?'checked':'')+' onclick="event.stopPropagation()" onchange="toggle('+t.id+')"><span>'+esc(t.txt)+'</span></div>';
+}
+function belKaartje(t){
+  return '<div class="wk bel" onclick="naarTegel(\'bellen\')" title="Bellen: '+esc(t.reden||'')+'"><span class="ic"></span><span>'+esc(t.txt)+
+    (t.volgende?' <span style="color:var(--muted)">'+new Date(t.volgende).toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'})+'</span>':'')+'</span></div>';
+}
+function renderWeek(list,td){
+  const ma=maandag(weekVerschuif), dagen=[];
+  for(let i=0;i<5;i++){ const d=new Date(ma); d.setDate(ma.getDate()+i); dagen.push(d); }
+  const eerste=dag(dagen[0]), laatste=dag(dagen[4]);
+  const vr=new Date(dagen[4]);
+  $('weeknav').innerHTML='<button onclick="weekVerschuif--;render()" title="Vorige week">‹</button>'+
+    '<b style="color:var(--ink)">'+(weekVerschuif===0?'Deze week':weekVerschuif===1?'Volgende week':'Week van '+dagen[0].toLocaleDateString('nl-NL',{day:'numeric',month:'short'}))+'</b>'+
+    '<span>'+dagen[0].toLocaleDateString('nl-NL',{day:'numeric',month:'short'})+' – '+vr.toLocaleDateString('nl-NL',{day:'numeric',month:'short'})+'</span>'+
+    '<button onclick="weekVerschuif++;render()" title="Volgende week">›</button>'+
+    (weekVerschuif!==0?'<button onclick="weekVerschuif=0;render()">Vandaag</button>':'')+
+    '<span style="margin-left:auto">Sleep een kaartje naar een andere dag. Klik op een dag om daar iets toe te voegen.</span>';
+  const bel=S.todos.filter(t=>t.type==='bellen'&&!t.done);
+  const kol=[];
+  const laat=list.filter(t=>!t.done&&t.due&&t.due<td&&(weekVerschuif===0));
+  if(laat.length) kol.push({naam:'Verlopen',sub:laat.length+'',cls:'laat',datum:'',items:laat.map(wkKaart).join('')});
+  dagen.forEach(d=>{
+    const ds=dag(d);
+    const items=list.filter(t=>t.due===ds && (ds>=td || t.done));
+    const bels=bel.filter(t=>(t.volgende?dag(t.volgende):td)===ds);
+    kol.push({naam:d.toLocaleDateString('nl-NL',{weekday:'short'}).replace('.',''),sub:d.getDate()+'',cls:ds===td?'vandaag':'',datum:ds,
+      items:bels.map(belKaartje).join('')+items.map(wkKaart).join('')});
+  });
+  const later=list.filter(t=>!t.done&&t.due&&t.due>laatste);
+  kol.push({naam:'Later',sub:later.length?later.length+'':'',cls:'',datum:'later',items:later.sort((a,b)=>a.due<b.due?-1:1).map(t=>wkKaart(t).replace('</span></div>',' <span style="color:var(--muted)">'+new Date(t.due+'T12:00').toLocaleDateString('nl-NL',{day:'numeric',month:'short'})+'</span></span></div>')).join('')});
+  const zonder=list.filter(t=>!t.done&&!t.due);
+  kol.push({naam:'Zonder datum',sub:zonder.length?zonder.length+'':'',cls:'',datum:'geen',items:zonder.map(wkKaart).join('')});
+  $('todos').innerHTML='<div class="week">'+kol.map(k=>'<div class="dagkol '+k.cls+'" data-datum="'+k.datum+'">'+
+    '<div class="dagkop" '+(k.datum&&k.datum!=='later'?'onclick="planOp(\''+k.datum+'\')" title="Iets toevoegen op deze dag"':'')+'>'+k.naam+' <span>'+k.sub+'</span>'+(k.datum&&k.datum!=='later'?'<b class="plus">+</b>':'')+'</div>'+k.items+'</div>').join('')+'</div>';
+  // slepen tussen dagen
+  $('todos').querySelectorAll('.wk[draggable]').forEach(el=>el.addEventListener('dragstart',e=>{ e.dataTransfer.setData('text/x-todo',el.dataset.id); e.dataTransfer.effectAllowed='move'; }));
+  $('todos').querySelectorAll('.dagkol').forEach(k=>{
+    const datum=k.dataset.datum;
+    if(!datum) return;
+    k.addEventListener('dragover',e=>{ if([...e.dataTransfer.types].includes('text/x-todo')){ e.preventDefault(); k.classList.add('over'); } });
+    k.addEventListener('dragleave',()=>k.classList.remove('over'));
+    k.addEventListener('drop',e=>{
+      e.preventDefault(); k.classList.remove('over');
+      const t=byId(+e.dataTransfer.getData('text/x-todo')); if(!t) return;
+      if(datum==='geen') t.due='';
+      else if(datum==='later'){ const d=new Date(dagen[0]); d.setDate(d.getDate()+7); t.due=dag(d); }
+      else t.due=datum;
+      save(); render();
+    });
+  });
+}
+function planOp(datum){
+  $('nDue').value=datum==='geen'?'':datum;
+  $('nTxt').focus();
+  toast(datum==='geen'?'Typ wat er moet gebeuren':'Typ wat er op '+new Date(datum+'T12:00').toLocaleDateString('nl-NL',{weekday:'long'})+' moet');
+}
 toggleTel(); render(); pasToe();
 </script>
 </body>
