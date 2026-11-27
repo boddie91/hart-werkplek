@@ -904,6 +904,15 @@ window.dash = (function () {
       document.getElementById('v-checklist').appendChild(f);
     }).catch(()=>{ document.getElementById('geenChecklist').hidden=false; });
   }
+  // laatste berekende classificatie en de aangevinkte klachten doorgeven aan Rapportages > Terugkoppeling start (geen naam of andere herkenbare gegevens)
+  let vorige=null;
+  setInterval(()=>{
+    const f=document.querySelector('#v-checklist iframe'); if(!f) return;
+    try{
+      const r=f.contentWindow.eval('JSON.stringify(typeof lastResults==="undefined"?{r:[],k:{}}:{r:lastResults,k:Object.fromEntries(lastResults.map(function(id){var d=DISORDERS.filter(function(x){return x.id===id;})[0];return [id,d?klachtenTextFor({d:d}):""];}))})');
+      if(r!==vorige){ vorige=r; localStorage.setItem('hw_dsm_laatste',r); }
+    }catch(e){}
+  },1500);
   function toon(naam){
     document.querySelectorAll(".hoofdtab").forEach(b=>b.classList.toggle('on',b.dataset.vlak===naam));
     document.querySelectorAll('.vlak').forEach(v=>v.hidden=v.id!=='v-'+naam);

@@ -44,11 +44,50 @@ details ul{margin:6px 0 2px;padding-left:18px}
 .vt td{padding:4px 6px;border-top:1px solid #efdde3;vertical-align:top}
 .vt td:first-child{color:var(--muted);width:52%}
 .vt td:last-child button{font:inherit;font-size:12.5px;border:0;background:none;color:var(--accent);cursor:pointer;padding:0;text-align:left;text-decoration:underline dotted}
+.modus{display:flex;gap:0;margin:6px 0 12px}
+.modus button{font:inherit;font-size:13.5px;border:1px solid var(--line);background:#fff;padding:7px 14px;cursor:pointer;color:var(--ink)}
+.modus button:first-child{border-radius:9px 0 0 9px}.modus button:last-child{border-radius:0 9px 9px 0;margin-left:-1px}
+.modus button.on{background:var(--ink);border-color:var(--ink);color:#fff;font-weight:600}
+#vrijTekst{min-height:260px;font-size:15px;line-height:1.5}
+.denk{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 4px}
+.denk span{font-size:12.5px;background:var(--chip);border-radius:16px;padding:3px 10px;color:#3d4a63}
+.stap{display:flex;gap:10px;align-items:flex-start;font-size:13px;color:var(--muted);margin:6px 0;line-height:1.45}
+.stap b.nr{flex:0 0 22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px}
 </style>
 </head>
 <body>
 <div class="wrap">
   <h1>Sessieverslag</h1>
+  <div class="modus"><button id="mbVrij" onclick="modus('vrij')">Vrij typen + Copilot</button><button id="mbForm" onclick="modus('form')">Invulformulier</button></div>
+
+  <div id="mVrij" hidden>
+    <div class="sub">Typ alles wat je kwijt wilt, gewoon uit je hoofd en ongefilterd. Copilot maakt er een professioneel verslag van. Namen die je hieronder noemt worden eerst weggehaald. Niets wordt opgeslagen.</div>
+    <div class="row">
+      <div><label for="vNr">Sessie nr.</label><input id="vNr" inputmode="numeric" placeholder="bijv. 4"></div>
+      <div><label for="vDatum">Datum</label><input id="vDatum" type="date"></div>
+      <div><label for="vWie">Noem cliënt</label><select id="vWie"><option>cliënt</option><option>mevrouw</option><option>meneer</option></select></div>
+    </div>
+    <label for="vNamen">Namen weglaten</label>
+    <div class="q">Voornaam van de cliënt en andere namen die je misschien typt, met komma's ertussen. Die worden vervangen voordat Copilot iets ziet.</div>
+    <input id="vNamen" placeholder="bijv. Sanne, Peter, Albert Heijn">
+    <label for="vDoel">Behandeldoel <span style="font-weight:400;color:var(--muted)">(mag leeg)</span></label>
+    <input id="vDoel" placeholder="bijv. minder piekeren en weer doorslapen">
+    <label for="vrijTekst">Jouw aantekeningen</label>
+    <div class="denk"><span>hoe ging het sinds vorige keer</span><span>huiswerk</span><span>hoe kwam ze over</span><span>waar ging het over</span><span>wat deed je</span><span>hoe reageerde ze</span><span>werk</span><span>veiligheid</span><span>wat denk jij ervan</span><span>afspraken</span><span>volgende keer</span></div>
+    <textarea id="vrijTekst" placeholder="Bijv.: ze was best gespannen vandaag, sliep wel beter, 4 van de 7 nachten. piekerkwartier lukt doordeweeks, weekend niet. ging vooral over gesprek met leidinggevende volgende week, ziet er als een berg tegenop, bang dat ze nee moet zeggen en dan een slechte collega is. G-schema gedaan op die gedachte, ze werd emotioneel. aan het eind zei ze 'eigenlijk vraag ik gewoon wat ik nodig heb'. werkt nu 2x3 uur. ik denk dat het echt om faalangst op werk draait. huiswerk 3 G-schema's, volgende keer rollenspel."></textarea>
+    <div class="bar" style="position:static;border:0;padding-top:12px">
+      <button class="act primary" onclick="naarCopilot()">Maak verslag met Copilot</button>
+      <button class="act" onclick="kopieerOpdracht()">Alleen kopiëren</button>
+      <button class="act" id="vLeeg" onclick="vrijLeeg()">Leegmaken</button>
+      <span class="ok" id="vOk"></span>
+    </div>
+    <div class="stap"><b class="nr">1</b><span>Copilot opent met je tekst al in het invoervak. Lukt dat niet, klik dan in het vak en druk op Ctrl+V.</span></div>
+    <div class="stap"><b class="nr">2</b><span>Druk in Copilot op Enter. Lees het verslag na: klopt alles, staat er niets in wat je niet zei? Pas [controleren] aan.</span></div>
+    <div class="stap"><b class="nr">3</b><span>Kopieer het verslag naar James. Het blijft jouw verslag en jouw verantwoordelijkheid.</span></div>
+    <details style="margin-top:10px"><summary>Wat Copilot precies krijgt</summary><pre id="vVoorbeeld" style="background:#fff;font-size:12.5px"></pre></details>
+  </div>
+
+  <div id="mForm">
   <div class="sub">Keuzes en knoppen worden vanzelf hele zinnen. In de vrije vakken schrijf je zelf korte, hele zinnen. Inspreken kan met Windows-toets + H. Niets wordt opgeslagen. <button class="link" onclick="voorbeeld()">Voorbeeld invullen</button></div>
 
   <details>
@@ -145,6 +184,7 @@ details ul{margin:6px 0 2px;padding-left:18px}
     <button class="act primary" onclick="kopieer()">Kopieer voor James</button>
     <button class="act" id="leeg" onclick="leegmaken()">Leegmaken</button>
     <span class="ok" id="ok"></span>
+  </div>
   </div>
 </div>
 
@@ -280,8 +320,8 @@ function leegmaken(){
   const b=$('leeg');
   if(!leegTimer){ b.textContent='Zeker weten?'; leegTimer=setTimeout(()=>{ b.textContent='Leegmaken'; leegTimer=null; },3000); return; }
   clearTimeout(leegTimer); leegTimer=null; b.textContent='Leegmaken';
-  document.querySelectorAll('textarea,input').forEach(el=>el.value='');
-  document.querySelectorAll('select').forEach(el=>{ if(el.id!=='stijl') el.selectedIndex=0; });
+  $('mForm').querySelectorAll('textarea,input').forEach(el=>el.value='');
+  $('mForm').querySelectorAll('select').forEach(el=>{ if(el.id!=='stijl') el.selectedIndex=0; });
   $('datum').value=vandaag();
   zetKnoppen($('chips'),gekozen,[]); zetKnoppen($('indruk'),indruk,[]);
   maak(); scrollTo(0,0);
@@ -343,6 +383,81 @@ Object.entries(HULP).forEach(([id,h])=>{
 });
 
 maak();
+
+// ---------- vrij typen + Copilot ----------
+function postHost(m){
+  const wv=(window.chrome&&chrome.webview)||(parent!==window&&parent.chrome&&parent.chrome.webview);
+  if(wv){ wv.postMessage(m); return true; }
+  return false;
+}
+function modus(m){
+  $('mVrij').hidden=m!=='vrij'; $('mForm').hidden=m==='vrij';
+  $('mbVrij').classList.toggle('on',m==='vrij'); $('mbForm').classList.toggle('on',m!=='vrij');
+  try{ localStorage.setItem('hw_verslag_modus',m); }catch(e){}
+  if(m==='vrij') maakOpdracht();
+}
+$('vDatum').value=vandaag();
+const escRe=x=>x.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+function filter(t){
+  const wie=$('vWie').value;
+  const namen=$('vNamen').value.split(',').map(x=>x.trim()).filter(x=>x.length>1);
+  t=t
+    .replace(/[\w.+-]+@[\w-]+\.[\w.]+/g,'[e-mail]')
+    .replace(/(\+31|0031|\b0)[\s\-.]?\d(?:[\s\-.]?\d){8}\b/g,'[telefoonnummer]')
+    .replace(/\b\d{4}\s?[A-Z]{2}\b/g,'[postcode]')
+    .replace(/\b\d{9}\b/g,'[nummer]')
+    .replace(/\b\d{1,2}[-\/.]\d{1,2}[-\/.](19|20)\d{2}\b/g,'[datum]');
+  namen.forEach((n,i)=>{ t=t.replace(new RegExp('(^|[^\\p{L}])'+escRe(n)+'(?![\\p{L}])','giu'),'$1'+(i===0?wie:'[naam]')); });
+  return t;
+}
+function maakOpdracht(){
+  const wie=$('vWie').value, nr=$('vNr').value.trim(), d=$('vDatum').value;
+  const datum=d?new Date(d+'T12:00').toLocaleDateString('nl-NL'):'';
+  const kop='Sessie'+(nr?' '+nr:'')+(datum?' – '+datum:'');
+  const doel=filter($('vDoel').value.trim());
+  const tekst=filter($('vrijTekst').value.trim());
+  const o=[
+'Je bent een ervaren basispsycholoog in de Nederlandse basis-ggz. Maak van mijn ruwe aantekeningen hieronder een kort, professioneel sessieverslag voor het elektronisch cliëntdossier.',
+'',
+'Regels:',
+'- Gebruik alleen informatie uit mijn aantekeningen. Voeg geen observaties, scores, diagnoses, interpretaties of details toe die er niet staan. Is iets onduidelijk of ontbreekt een detail dat nodig lijkt, zet dan [controleren].',
+'- Schrijf over de cliënt als "'+wie+'", in de derde persoon, zakelijk en respectvol. De cliënt kan het verslag inzien.',
+'- Gebruik passende vaktermen (zoals psycho-educatie, cognitieve herstructurering, G-schema, gedragsactivatie, exposure, vermijding, piekeren, assertiviteit, terugvalpreventie), maar alleen als wat ik beschrijf daar echt bij past.',
+'- Houd waarneming en interpretatie uit elkaar. Mijn eigen inschattingen komen onder "Beschouwing", geformuleerd als inschatting of werkhypothese.',
+'- Laat mijn persoonlijke oordelen, frustraties of spreektaal weg. Is een eigen reactie klinisch relevant, formuleer die dan professioneel als observatie van het contact.',
+'- Laat weg wat niet relevant is voor de behandeling, en details over andere personen.',
+'- Noem veiligheid of suïcidaliteit alleen als dat in mijn aantekeningen staat.',
+'- Neem een letterlijke uitspraak van de cliënt over als ik die tussen aanhalingstekens noteer.',
+'- Gebruik korte alinea\'s met deze kopjes, en sla een kopje over als ik er niets over schreef: Terugblik, In de sessie, Interventies, Reactie, Voortgang en werk, Beschouwing, Afspraken en vervolg.',
+'- Geen opsommingstekens, geen vetgedrukte tekst, maximaal ongeveer 250 woorden.',
+'- Begin met de regel "'+kop+'". Geef alleen het verslag, zonder inleiding of uitleg erna.',
+''];
+  if(doel) o.push('Behandeldoel: '+doel,'');
+  o.push('Mijn aantekeningen:','"""',tekst||'[nog geen aantekeningen]','"""');
+  const r=o.join('\n');
+  $('vVoorbeeld').textContent=r;
+  return r;
+}
+['vNr','vDatum','vWie','vNamen','vDoel','vrijTekst'].forEach(id=>$(id).addEventListener('input',maakOpdracht));
+function naarCopilot(){
+  if(!$('vrijTekst').value.trim()){ $('vrijTekst').focus(); return; }
+  const o=maakOpdracht();
+  if(postHost('copilot:'+o)) $('vOk').textContent='Copilot opent…';
+  else kopieerOpdracht();
+}
+function kopieerOpdracht(){
+  navigator.clipboard.writeText(maakOpdracht()).then(()=>{ $('vOk').textContent='Gekopieerd: plak in Copilot met Ctrl+V'; },()=>{ $('vOk').textContent='Kopiëren lukte niet'; });
+}
+let vLeegT=null;
+function vrijLeeg(){
+  const b=$('vLeeg');
+  if(!vLeegT){ b.textContent='Zeker weten?'; vLeegT=setTimeout(()=>{ b.textContent='Leegmaken'; vLeegT=null; },3000); return; }
+  clearTimeout(vLeegT); vLeegT=null; b.textContent='Leegmaken';
+  ['vNr','vNamen','vDoel','vrijTekst'].forEach(id=>$(id).value='');
+  $('vDatum').value=vandaag(); $('vOk').textContent=''; maakOpdracht();
+}
+let startModus='vrij'; try{ startModus=localStorage.getItem('hw_verslag_modus')||'vrij'; }catch(e){}
+modus(startModus);
 </script>
 </body>
 </html>

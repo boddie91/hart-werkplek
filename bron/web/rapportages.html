@@ -53,16 +53,11 @@ pre{white-space:pre-wrap;word-wrap:break-word;background:var(--chip);border-radi
 </div>
 
 <div class="vlak" id="v-start">
-  <div class="midden">
+  <div class="midden" id="geenChecklist" hidden>
     <div class="kaart">
       <h2>Terugkoppeling start</h2>
-      <p>De terugkoppeling aan de bedrijfsarts maak je in je checklist differentiaaldiagnostiek. Die staat in het tabblad DSM, zodat de classificatie en de brief bij elkaar blijven.</p>
-      <ul>
-        <li>Vink in de checklist de klachten aan en bereken de classificatie.</li>
-        <li>Ga in de checklist naar "Terugkoppeling mailen" voor het concept, het Word-bestand en de mail.</li>
-        <li>Vraag eerst het akkoord van de cliënt en vink dat af in je aanmeldpaneel.</li>
-      </ul>
-      <button class="knop primair" onclick="post('checklist')">Open de checklist</button>
+      <p>Hier komt het scherm "Terugkoppeling mailen" uit je checklist differentiaaldiagnostiek. Kies eerst het bestand van de checklist.</p>
+      <button class="knop primair" onclick="post('kies-checklist')">Kies het bestand</button>
     </div>
   </div>
 </div>
@@ -146,6 +141,63 @@ function toon(naam){
   }
 }
 document.querySelectorAll('.hoofdtab').forEach(b=>b.onclick=()=>toon(b.dataset.vlak));
+
+// ---------- terugkoppeling start: het mailscherm uit je eigen checklist ----------
+// De checklist staat alleen op deze computer (web/eigen). Hier tonen we alleen "Terugkoppeling mailen"
+// en nemen we de laatst berekende classificatie uit het tabblad DSM over.
+let tkFrame=null, tkToegepast='';
+function laadTerugkoppeling(){
+  fetch('eigen/checklist.html',{method:'HEAD',cache:'no-store'}).then(r=>{
+    if(!r.ok) throw 0;
+    $('geenChecklist').hidden=true;
+    if(tkFrame) tkFrame.remove();
+    tkFrame=document.createElement('iframe'); tkFrame.src='eigen/checklist.html?mail&t='+Date.now(); tkFrame.title='Terugkoppeling mailen';
+    tkFrame.onload=()=>{
+      try{
+        const w=tkFrame.contentWindow, d=w.document;
+        const st=d.createElement('style');
+        st.textContent='#tab-btn-dsm,#tab-dsm,.reset-box{display:none!important} .top h1{font-size:1.3rem}';
+        d.head.appendChild(st);
+        const h=d.querySelector('.top h1'); if(h) h.textContent='Terugkoppeling start';
+        w.showTab('mail');
+        tkToegepast='';
+        neemClassificatieOver();
+      }catch(e){}
+    };
+    $('v-start').appendChild(tkFrame);
+  }).catch(()=>{ $('geenChecklist').hidden=false; });
+}
+let tkKlachten={};
+function zetKlachten(){
+  try{
+    const d=tkFrame.contentWindow.document, el=d.getElementById('letter-klachten'), id=d.getElementById('letter-diagnosis').value;
+    if(el && tkKlachten[id] && el.dataset.touched!=='1') el.value=tkKlachten[id];
+  }catch(e){}
+}
+function neemClassificatieOver(){
+  if(!tkFrame) return;
+  let r=''; try{ r=localStorage.getItem('hw_dsm_laatste')||''; }catch(e){}
+  if(!r || r===tkToegepast) return;
+  try{
+    const o=JSON.parse(r), lijst=Array.isArray(o)?o:o.r;
+    if(!Array.isArray(lijst) || !lijst.every(x=>typeof x==='string' && /^[\w-]+$/.test(x))) return;
+    tkKlachten=(o && o.k && typeof o.k==='object')?o.k:{};
+    const w=tkFrame.contentWindow;
+    w.eval('lastResults='+JSON.stringify(lijst)+';syncLetterWithResults();');
+    const sel=w.document.getElementById('letter-diagnosis');
+    if(sel && !sel.dataset.hwKlachten){ sel.dataset.hwKlachten='1'; sel.addEventListener('change',()=>setTimeout(zetKlachten,0)); }
+    zetKlachten();
+    tkToegepast=r;
+  }catch(e){}
+}
+window.addEventListener('storage',e=>{ if(e.key==='hw_dsm_laatste') neemClassificatieOver(); });
+window.addEventListener('focus',neemClassificatieOver);
+document.addEventListener('visibilitychange',()=>{ if(!document.hidden) neemClassificatieOver(); });
+setInterval(neemClassificatieOver,3000);
+if(window.chrome && chrome.webview){
+  chrome.webview.addEventListener('message',ev=>{ if(ev.data==='checklist-ok') laadTerugkoppeling(); });
+}
+laadTerugkoppeling();
 
 // ---------- verwijzing en advies ----------
 const REDENEN=[

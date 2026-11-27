@@ -177,7 +177,8 @@ class MainForm : Form
 
     static readonly Dictionary<string, string> Standaard = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
     {
-        { "aanmeldpaneel", "https://boddie91.github.io/hart-aanmeldpaneel/taskpane.html" }
+        { "aanmeldpaneel", "https://boddie91.github.io/hart-aanmeldpaneel/taskpane.html" },
+        { "copilot", "https://m365.cloud.microsoft/chat" }
     };
 
     string ResolveUrl(string key, string label)
@@ -203,6 +204,7 @@ class MainForm : Form
         AddTab("interventies", "Interventies", "https://werkplek.local/interventies.html");
         AddTab("sessieblad", "Sessieblad", "https://werkplek.local/sessieblad.html");
         AddTab("sjablonen", "Sjablonen", null);
+        AddTab("copilot", "Copilot", null);
     }
 
     void AddTab(string key, string label, string fixedUrl)
@@ -295,7 +297,7 @@ class MainForm : Form
         string[] menu = {
             "start",
             "#Dagelijks", "outlook", "james", "caseload",
-            "#Sessie", "sessieblad", "@verslag", "interventies",
+            "#Sessie", "sessieblad", "@verslag", "copilot", "interventies",
             "#Diagnostiek en verslag", "dsm", "rapportages", "sjablonen",
             "#Documenten", "remarkable", "@klembord" };
         List<Control> items = new List<Control>();
@@ -650,6 +652,14 @@ class MainForm : Form
         {
             CoreWebView2 core = sender as CoreWebView2;
             BeginInvoke(new Action(delegate { KiesChecklist(core); }));
+        }
+        else if (m.StartsWith("copilot:"))
+        {
+            // opdracht + jouw tekst naar Copilot: op het klembord en (als het lukt) meteen in het invoervak
+            string tekst = m.Substring(8);
+            try { Clipboard.SetText(tekst); } catch { }
+            Tab c;
+            if (tabs.TryGetValue("copilot", out c)) { ShowTab(c); VulCopilot(c, tekst); }
         }
         else if (m == "verslag")
         {
@@ -1896,6 +1906,30 @@ class MainForm : Form
         if (bron == null) return;
         string js = "(function(){var a=document.createElement('a');a.href=" + JsString(url) + ";a.download='';a.rel='noopener';document.body.appendChild(a);a.click();a.remove();})();";
         try { bron.View.CoreWebView2.ExecuteScriptAsync(js); } catch { }
+    }
+
+    // zet de tekst in het invoervak van Copilot (niet versturen: dat doe je zelf na een blik erop)
+    async void VulCopilot(Tab c, string tekst)
+    {
+        try
+        {
+            await EnsureView(c);
+            for (int i = 0; i < 100 && (c.View == null || c.View.CoreWebView2 == null); i++) await Task.Delay(200);
+            if (c.View == null || c.View.CoreWebView2 == null) return;
+            for (int i = 0; i < 75; i++)
+            {
+                string bron = c.View.CoreWebView2.Source ?? "";
+                if (bron.StartsWith("https://") && !bron.StartsWith("https://werkplek.local")) break;
+                await Task.Delay(200);
+            }
+            await Task.Delay(800);
+            string js = "(function(t){var n=0;function zoek(){var kand=[].slice.call(document.querySelectorAll('textarea,[contenteditable=\"true\"],[role=\"textbox\"]')).filter(function(e){var r=e.getBoundingClientRect();return r.width>200&&r.height>15;});" +
+                "if(!kand.length){if(n++<60)setTimeout(zoek,500);return;}var e=kand[kand.length-1];e.focus();" +
+                "if(e.tagName==='TEXTAREA'){var s=Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype,'value').set;s.call(e,t);e.dispatchEvent(new Event('input',{bubbles:true}));}" +
+                "else{document.execCommand('selectAll',false,null);document.execCommand('insertText',false,t);}}zoek();})(" + JsString(tekst) + ");";
+            await c.View.CoreWebView2.ExecuteScriptAsync(js);
+        }
+        catch { }
     }
 
     static string JsString(string s)
