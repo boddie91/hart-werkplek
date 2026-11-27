@@ -61,7 +61,7 @@ details ul{margin:6px 0 2px;padding-left:18px}
   <div class="modus"><button id="mbVrij" onclick="modus('vrij')">Vrij typen + Copilot</button><button id="mbForm" onclick="modus('form')">Invulformulier</button></div>
 
   <div id="mVrij" hidden>
-    <div class="sub">Typ alles wat je kwijt wilt, gewoon uit je hoofd en ongefilterd. Copilot maakt er een professioneel verslag van. Namen die je hieronder noemt worden eerst weggehaald. Niets wordt opgeslagen.</div>
+    <div class="sub">Typ alles wat je kwijt wilt, gewoon uit je hoofd, ongefilterd en in je eigen woorden. Copilot zet het om in een professioneel verslag in vaktaal. Namen die je hieronder noemt worden eerst weggehaald. Niets wordt opgeslagen.</div>
     <div class="row">
       <div><label for="vNr">Sessie nr.</label><input id="vNr" inputmode="numeric" placeholder="bijv. 4"></div>
       <div><label for="vDatum">Datum</label><input id="vDatum" type="date"></div>
@@ -72,6 +72,7 @@ details ul{margin:6px 0 2px;padding-left:18px}
     <input id="vNamen" placeholder="bijv. Sanne, Peter, Albert Heijn">
     <label for="vDoel">Behandeldoel <span style="font-weight:400;color:var(--muted)">(mag leeg)</span></label>
     <input id="vDoel" placeholder="bijv. minder piekeren en weer doorslapen">
+    <label style="display:flex;gap:8px;align-items:center;font-weight:400;font-size:13.5px"><input type="checkbox" id="vLeer" checked style="width:auto"> Laat onder het verslag zien welke van mijn woorden in vaktaal zijn omgezet</label>
     <label for="vrijTekst">Jouw aantekeningen</label>
     <div class="denk"><span>hoe ging het sinds vorige keer</span><span>huiswerk</span><span>hoe kwam ze over</span><span>waar ging het over</span><span>wat deed je</span><span>hoe reageerde ze</span><span>werk</span><span>veiligheid</span><span>wat denk jij ervan</span><span>afspraken</span><span>volgende keer</span></div>
     <textarea id="vrijTekst" placeholder="Bijv.: ze was best gespannen vandaag, sliep wel beter, 4 van de 7 nachten. piekerkwartier lukt doordeweeks, weekend niet. ging vooral over gesprek met leidinggevende volgende week, ziet er als een berg tegenop, bang dat ze nee moet zeggen en dan een slechte collega is. G-schema gedaan op die gedachte, ze werd emotioneel. aan het eind zei ze 'eigenlijk vraag ik gewoon wat ik nodig heb'. werkt nu 2x3 uur. ik denk dat het echt om faalangst op werk draait. huiswerk 3 G-schema's, volgende keer rollenspel."></textarea>
@@ -83,7 +84,7 @@ details ul{margin:6px 0 2px;padding-left:18px}
     </div>
     <div class="stap"><b class="nr">1</b><span>Copilot opent met je tekst al in het invoervak. Lukt dat niet, klik dan in het vak en druk op Ctrl+V.</span></div>
     <div class="stap"><b class="nr">2</b><span>Druk in Copilot op Enter. Lees het verslag na: klopt alles, staat er niets in wat je niet zei? Pas [controleren] aan.</span></div>
-    <div class="stap"><b class="nr">3</b><span>Kopieer het verslag naar James. Het blijft jouw verslag en jouw verantwoordelijkheid.</span></div>
+    <div class="stap"><b class="nr">3</b><span>Kopieer alleen het verslag naar James, niet het stukje "Vertaald naar vaktaal". Het blijft jouw verslag en jouw verantwoordelijkheid.</span></div>
     <details style="margin-top:10px"><summary>Wat Copilot precies krijgt</summary><pre id="vVoorbeeld" style="background:#fff;font-size:12.5px"></pre></details>
   </div>
 
@@ -422,7 +423,9 @@ function maakOpdracht(){
 'Regels:',
 '- Gebruik alleen informatie uit mijn aantekeningen. Voeg geen observaties, scores, diagnoses, interpretaties of details toe die er niet staan. Is iets onduidelijk of ontbreekt een detail dat nodig lijkt, zet dan [controleren].',
 '- Schrijf over de cliënt als "'+wie+'", in de derde persoon, zakelijk en respectvol. De cliënt kan het verslag inzien.',
-'- Gebruik passende vaktermen (zoals psycho-educatie, cognitieve herstructurering, G-schema, gedragsactivatie, exposure, vermijding, piekeren, assertiviteit, terugvalpreventie), maar alleen als wat ik beschrijf daar echt bij past.',
+'- Ik schrijf vaak beschrijvend, in gewone woorden. Vertaal dat actief naar klinische vaktaal zoals een collega-psycholoog die in intervisie of collegiaal overleg verwacht, vanuit een cognitief-gedragstherapeutisch kader. Voorbeelden: "gaat het uit de weg" wordt vermijdingsgedrag; "blijft maar malen" wordt piekeren of rumineren; "denkt meteen het ergste" wordt catastroferen; "is heel streng voor zichzelf" wordt hoge eisen aan zichzelf; "doet alles voor iedereen" wordt moeite met grenzen aangeven; "situatie, gedachte, gevoel en gedrag op een rij gezet" wordt G-schema; "gekeken of haar gedachte klopte" wordt cognitieve herstructurering (uitdagen van disfunctionele cognities); "uitgelegd hoe stress werkt" wordt psycho-educatie; "weer leuke dingen plannen" wordt gedragsactivatie; "huilde" wordt emotioneel, met tranen; "lachte bij een verdrietig verhaal" wordt incongruent affect; "zei weinig" wordt weinig spontane spraak.',
+'- Benoem waar het past de klinische begrippen achter wat ik beschrijf: instandhoudende factoren, uitlokkende situaties, disfunctionele cognities, veiligheidsgedrag, (anticipatie)angst, stemming en affect, copingstijl, motivatie en hulpvraag.',
+'- Vaktaal mag de inhoud nooit groter of zekerder maken dan wat ik schreef. Een vakterm die net niet past gebruik je niet.',
 '- Houd waarneming en interpretatie uit elkaar. Mijn eigen inschattingen komen onder "Beschouwing", geformuleerd als inschatting of werkhypothese.',
 '- Laat mijn persoonlijke oordelen, frustraties of spreektaal weg. Is een eigen reactie klinisch relevant, formuleer die dan professioneel als observatie van het contact.',
 '- Laat weg wat niet relevant is voor de behandeling, en details over andere personen.',
@@ -430,7 +433,8 @@ function maakOpdracht(){
 '- Neem een letterlijke uitspraak van de cliënt over als ik die tussen aanhalingstekens noteer.',
 '- Gebruik korte alinea\'s met deze kopjes, en sla een kopje over als ik er niets over schreef: Terugblik, In de sessie, Interventies, Reactie, Voortgang en werk, Beschouwing, Afspraken en vervolg.',
 '- Geen opsommingstekens, geen vetgedrukte tekst, maximaal ongeveer 250 woorden.',
-'- Begin met de regel "'+kop+'". Geef alleen het verslag, zonder inleiding of uitleg erna.',
+'- Begin met de regel "'+kop+'". Geef eerst alleen het verslag, zonder inleiding.',
+...( $('vLeer').checked ? ['- Zet na het verslag een witregel en dan het kopje "Vertaald naar vaktaal", met per regel: mijn woorden → de vakterm die je gebruikte. Dit stuk is alleen voor mij en hoort niet in het dossier.'] : []),
 ''];
   if(doel) o.push('Behandeldoel: '+doel,'');
   o.push('Mijn aantekeningen:','"""',tekst||'[nog geen aantekeningen]','"""');
@@ -438,7 +442,7 @@ function maakOpdracht(){
   $('vVoorbeeld').textContent=r;
   return r;
 }
-['vNr','vDatum','vWie','vNamen','vDoel','vrijTekst'].forEach(id=>$(id).addEventListener('input',maakOpdracht));
+['vNr','vDatum','vWie','vNamen','vDoel','vrijTekst','vLeer'].forEach(id=>{ $(id).addEventListener('input',maakOpdracht); $(id).addEventListener('change',maakOpdracht); });
 function naarCopilot(){
   if(!$('vrijTekst').value.trim()){ $('vrijTekst').focus(); return; }
   const o=maakOpdracht();
