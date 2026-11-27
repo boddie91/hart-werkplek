@@ -112,3 +112,8 @@ Versie 20.2
 Versie 20.3
 - To do's in een weekoverzicht (ma t/m vr, verlopen, later, zonder datum). Sleep kaartjes naar een andere dag; klik op een dag om iets toe te voegen. Je tegelindeling wordt één keer teruggezet.
 - Zijvensters (James, klembord, sessieverslag) liggen vast rechts over de pagina. De pagina houdt haar breedte en krijgt een eigen schuifbalk onderin.
+
+Versie 20.4
+- Sessieverslag: 'Vrij typen + Copilot'. Typ je aantekeningen in eigen woorden; namen en nummers worden eerst weggehaald, Copilot maakt er een verslag in vaktaal van, met een lijstje welke woorden zijn omgezet.
+- Nieuw tabblad Copilot in het menu, onder Sessie.
+- Rapportages > Terugkoppeling start toont nu het scherm 'Terugkoppeling mailen' uit je checklist, met de classificatie uit het DSM-tabblad al ingevuld.
